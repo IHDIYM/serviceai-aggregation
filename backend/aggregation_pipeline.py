@@ -201,7 +201,6 @@ class ServiceMetricsAggregator:
                 doc_id = f"metrics_{int(datetime.now(IST).timestamp())}"
             
             # Remove any invalid characters for Firestore document IDs
-            import re
             doc_id = re.sub(r'[^a-zA-Z0-9_-]', '_', doc_id)
             
             logger.info(f"Final document ID: {doc_id}")

@@ -34,4 +34,14 @@ jobs:
         cd backend
         python aggregation_pipeline.py
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: backend/serviceAccountKey.json 
+        GOOGLE_APPLICATION_CREDENTIALS: backend/serviceAccountKey.json
+        TZ: UTC
+        
+    - name: Show logs on failure
+      if: failure()
+      run: |
+        echo "Aggregation failed. Check the logs above for details."
+        echo "Common issues:"
+        echo "- Missing Firebase credentials"
+        echo "- Network connectivity issues"
+        echo "- Firestore permissions" 
