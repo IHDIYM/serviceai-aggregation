@@ -44,4 +44,4 @@ jobs:
         echo "Common issues:"
         echo "- Missing Firebase credentials"
         echo "- Network connectivity issues"
-        echo "- Firestore permissions" 
+        echo "- Firestore permissions" # Trigger schedule
