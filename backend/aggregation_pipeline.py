@@ -302,15 +302,47 @@ class ServiceMetricsAggregator:
                 'error': str(e)
             }
 
-def main():
-    """Main function to run the aggregation"""
+def get_last_aggregated_interval(db, interval_minutes=15):
+    """Get the end time of the last aggregated interval from service_metrics collection (UTC)."""
+    docs = db.collection('service_metrics').order_by('interval_end', direction=firestore.Query.DESCENDING).limit(1).stream()
+    for doc in docs:
+        data = doc.to_dict()
+        interval_end = data.get('interval_end')
+        if interval_end:
+            # Parse ISO string
+            return datetime.fromisoformat(interval_end.replace('Z', '+00:00')).astimezone(timezone.utc)
+    return None
+
+def run_backfill(interval_minutes=15):
     aggregator = ServiceMetricsAggregator()
-    result = aggregator.run_aggregation(interval_minutes=15)
-    
-    if result['success']:
-        print(f"✅ Aggregation successful: {result['metrics_summary']}")
-    else:
-        print(f"❌ Aggregation failed: {result['error']}")
+    now = datetime.now(timezone.utc)
+    # Round down to nearest interval
+    minutes_to_subtract = now.minute % interval_minutes
+    current_interval_start = now.replace(minute=now.minute - minutes_to_subtract, second=0, microsecond=0)
+    current_interval_end = current_interval_start + timedelta(minutes=interval_minutes)
+
+    last_end = get_last_aggregated_interval(aggregator.db, interval_minutes)
+    if not last_end:
+        # If no previous doc, start from midnight UTC
+        last_end = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    intervals = []
+    while last_end < current_interval_start:
+        start_time = last_end
+        end_time = start_time + timedelta(minutes=interval_minutes)
+        intervals.append((start_time, end_time))
+        last_end = end_time
+    if not intervals:
+        logger.info("No missed intervals to backfill.")
+    for start_time, end_time in intervals:
+        logger.info(f"Backfilling interval: {start_time} to {end_time}")
+        aggregator.run_aggregation_custom(start_time, end_time)
+    # Always run the current interval as well
+    logger.info(f"Running aggregation for current interval: {current_interval_start} to {current_interval_end}")
+    aggregator.run_aggregation_custom(current_interval_start, current_interval_end)
+
+def main():
+    """Main function to run the aggregation with backfill"""
+    run_backfill(interval_minutes=15)
 
 if __name__ == "__main__":
     main() 
