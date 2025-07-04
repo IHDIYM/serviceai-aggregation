@@ -29,6 +29,12 @@ jobs:
         cd backend
         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccountKey.json
         
+    - name: Set interval start time (UTC, rounded down to 15 min)
+      id: interval
+      run: |
+        export INTERVAL_START=$(date -u +"%Y-%m-%dT%H:%M:00Z" -d @$(( $(date +%s) / 900 * 900 )))
+        echo "INTERVAL_START=$INTERVAL_START" >> $GITHUB_ENV
+
     - name: Run aggregation
       run: |
         cd backend
@@ -36,6 +42,7 @@ jobs:
       env:
         GOOGLE_APPLICATION_CREDENTIALS: backend/serviceAccountKey.json
         TZ: UTC
+        INTERVAL_START: ${{ env.INTERVAL_START }}
         
     - name: Show logs on failure
       if: failure()
