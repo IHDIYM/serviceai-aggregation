@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import axios from "axios";
+import MetricsDashboard from '@/components/MetricsDashboard';
 
 // --- Technician Components ---
 const Timer = ({ startTime }: { startTime: string }) => {
@@ -215,6 +216,11 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign }: any) 
                         </table>
                     </div>
                 </div>
+            </div>
+
+            {/* Metrics Dashboard */}
+            <div className="bg-white shadow-lg rounded-xl p-6">
+                <MetricsDashboard user={auth.currentUser} />
             </div>
         </div>
     );
