@@ -220,18 +220,20 @@ app.get('/metrics', verifyToken, verifyManager, async (req, res) => {
 // Get real-time dashboard metrics (manager only)
 app.get('/metrics/dashboard', verifyToken, verifyManager, async (req, res) => {
   try {
-    // Get today's metrics
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
+    // Calculate UTC midnight for today and tomorrow
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    const tomorrowUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+
     const snapshot = await admin.firestore()
       .collection('service_metrics')
-      .where('interval_start', '>=', today)
+      .where('interval_start', '>=', todayUTC.toISOString())
+      .where('interval_start', '<', tomorrowUTC.toISOString())
       .orderBy('interval_start', 'desc')
       .get();
-    
+
     const todayMetrics = snapshot.docs.map(doc => doc.data().metrics);
-    
+
     // Aggregate today's data
     const dashboardMetrics = {
       total_requests_today: sum(todayMetrics, 'total_requests'),
@@ -241,7 +243,7 @@ app.get('/metrics/dashboard', verifyToken, verifyManager, async (req, res) => {
       top_technicians: getTopTechnicians(todayMetrics),
       hourly_distribution: aggregateHourlyDistribution(todayMetrics)
     };
-    
+
     res.json(dashboardMetrics);
   } catch (error) {
     console.error(error);
