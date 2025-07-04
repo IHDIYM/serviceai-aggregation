@@ -1,6 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import logging
 import os
@@ -13,6 +13,21 @@ logger = logging.getLogger(__name__)
 
 # Set timezone to IST (UTC+5:30)
 IST = pytz.timezone('Asia/Kolkata')
+
+def get_interval_from_env(interval_minutes=15):
+    interval_start_str = os.environ.get('INTERVAL_START')
+    if interval_start_str:
+        # Parse ISO string in UTC
+        start_time = datetime.strptime(interval_start_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        end_time = start_time + timedelta(minutes=interval_minutes)
+        return start_time, end_time
+    else:
+        # Fallback to old logic (local time, rounded down)
+        now = datetime.now(timezone.utc)
+        minutes_to_subtract = now.minute % interval_minutes
+        start_time = now.replace(minute=now.minute - minutes_to_subtract, second=0, microsecond=0)
+        end_time = start_time + timedelta(minutes=interval_minutes)
+        return start_time, end_time
 
 class ServiceMetricsAggregator:
     def __init__(self):
@@ -218,7 +233,7 @@ class ServiceMetricsAggregator:
             logger.info("Starting aggregation pipeline...")
             
             # Get time range
-            start_time, end_time = self.get_date_range(interval_minutes)
+            start_time, end_time = get_interval_from_env(interval_minutes)
             logger.info(f"Aggregating data from {start_time} to {end_time}")
             
             # Fetch data
