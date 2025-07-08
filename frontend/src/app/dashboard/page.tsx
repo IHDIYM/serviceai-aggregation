@@ -5,6 +5,8 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import axios from "axios";
 import MetricsDashboard from '@/components/MetricsDashboard';
+import React, { useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 // --- Technician Components ---
 const Timer = ({ startTime }: { startTime: string }) => {
@@ -26,74 +28,220 @@ const Timer = ({ startTime }: { startTime: string }) => {
   return <span className="font-mono text-lg text-gray-800">{elapsedTime}</span>;
 };
 
-const TechnicianDashboard = ({ profile, requests, onAccept, onClose }: any) => (
-  <div className="max-w-7xl mx-auto space-y-8">
-    {/* Profile Card */}
-    <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-        {/* ... same profile card UI as before ... */}
-    </div>
-    {/* Service Request Management */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Incoming Requests */}
-      <div className="bg-white shadow-lg rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Incoming Requests</h2>
-        <div className="space-y-4">
-          {requests.pending.length > 0 ? requests.pending.map((req: any) => (
-            <div key={req.id} className="p-4 border rounded-lg bg-gray-50">
-              <p className="font-semibold">{req.authorName || 'User'}</p>
-              <p className="text-gray-600 text-sm">{new Date(req.createdAt.seconds * 1000).toLocaleString()}</p>
-              <p className="mt-2">{req.requestDetails}</p>
-              <button onClick={() => onAccept(req.id)} className="mt-3 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600">Accept</button>
-            </div>
-          )) : <p className="text-gray-500">No pending requests.</p>}
+const TechnicianDashboard = ({ profile, requests, onAccept, onClose }: any) => {
+  const [manualMeta, setManualMeta] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [searchModal, setSearchModal] = useState<{ open: boolean, requestId: string | null }>({ open: false, requestId: null });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper to get auth header
+  const getAuthHeader = async () => {
+    const user = auth.currentUser;
+    if (!user) return { headers: {} };
+    const idToken = await user.getIdToken();
+    return { headers: { Authorization: `Bearer ${idToken}` } };
+  };
+
+  // Manual upload handler
+  const handleManualUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    try {
+      const config = await getAuthHeader();
+      const formData = new FormData();
+      formData.append('pdf', file);
+      const res = await axios.post('http://localhost:4000/manual/upload', formData, {
+        ...config,
+        headers: { ...config.headers, 'Content-Type': 'multipart/form-data' },
+      });
+      setManualMeta(res.data.metadata);
+    } catch (err: any) {
+      setUploadError(err?.response?.data?.error || 'Failed to upload manual.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Open search modal for a request
+  const openSearchModal = (requestId: string) => {
+    setSearchModal({ open: true, requestId });
+    setSearchQuery('');
+    setSearchResult(null);
+    setSearchError(null);
+  };
+
+  // Close search modal
+  const closeSearchModal = () => {
+    setSearchModal({ open: false, requestId: null });
+    setSearchQuery('');
+    setSearchResult(null);
+    setSearchError(null);
+  };
+
+  // Handle search submit
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchLoading(true);
+    setSearchResult(null);
+    setSearchError(null);
+    try {
+      const config = await getAuthHeader();
+      const res = await axios.post('http://localhost:4000/manual/search', { query: searchQuery }, config);
+      setSearchResult(res.data);
+    } catch (err: any) {
+      setSearchError(err?.response?.data?.error || 'Failed to search manual.');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Manual Upload Section */}
+      <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div>
+          <input
+            type="file"
+            accept="application/pdf"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleManualUpload}
+          />
+          <button
+            className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? 'Uploading...' : 'Upload PDF Manual'}
+          </button>
+        </div>
+        {manualMeta && (
+          <div className="text-sm text-gray-700">
+            <div><b>Manual:</b> {manualMeta.currentFileName}</div>
+            <div><b>Pages:</b> {manualMeta.pageCount}</div>
+            <div><b>Total Chunks:</b> {manualMeta.totalChunks}</div>
+          </div>
+        )}
+        {uploadError && <div className="text-red-600 text-sm">{uploadError}</div>}
+      </div>
+      {/* Service Request Management */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Incoming Requests */}
+        <div className="bg-white shadow-lg rounded-xl p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Incoming Requests</h2>
+          <div className="space-y-4">
+            {requests.pending.length > 0 ? requests.pending.map((req: any) => (
+              <div key={req.id} className="p-4 border rounded-lg bg-gray-50">
+                <p className="font-semibold">{req.authorName || 'User'}</p>
+                <p className="text-gray-600 text-sm">{new Date(req.createdAt.seconds * 1000).toLocaleString()}</p>
+                <p className="mt-2">{req.requestDetails}</p>
+                <button onClick={() => onAccept(req.id)} className="mt-3 w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600">Accept</button>
+                <button onClick={() => openSearchModal(req.id)} className="mt-2 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700">Search solution from the manual</button>
+              </div>
+            )) : <p className="text-gray-500">No pending requests.</p>}
+          </div>
+        </div>
+        {/* Active Services */}
+        <div className="bg-white shadow-lg rounded-xl p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Active Services</h2>
+          <div className="space-y-4">
+            {requests.active.length > 0 ? requests.active.map((req: any) => (
+              <div key={req.id} className="p-4 border rounded-lg bg-yellow-50">
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold">{req.authorName || 'User'}</p>
+                  {req.acceptedAt && req.acceptedAt.seconds ? (
+                    <Timer startTime={new Date(req.acceptedAt.seconds * 1000).toISOString()} />
+                  ) : (
+                    <span className="text-gray-500">Not started</span>
+                  )}
+                </div>
+                <p className="mt-2">{req.requestDetails}</p>
+                <button onClick={() => onClose(req.id)} className="mt-3 w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Mark as Complete</button>
+                <button onClick={() => openSearchModal(req.id)} className="mt-2 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700">Search solution from the manual</button>
+              </div>
+            )) : <p className="text-gray-500">No active services.</p>}
+          </div>
+        </div>
+        {/* Service History */}
+        <div className="bg-white shadow-lg rounded-xl p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Service History</h2>
+          <div className="space-y-4">
+            {requests.closed.length > 0 ? requests.closed.map((req: any) => (
+              <div key={req.id} className="p-4 border rounded-lg bg-blue-50">
+                <p className="font-semibold">{req.authorName || 'User'}</p>
+                <p className="text-gray-600 text-sm">
+                  Closed: {formatDate(req.closedAt)}
+                </p>
+                <p className="mt-2 text-gray-700">{req.requestDetails}</p>
+              </div>
+            )) : <p className="text-gray-500">No completed services.</p>}
+          </div>
         </div>
       </div>
-      {/* Active Services */}
-      <div className="bg-white shadow-lg rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Active Services</h2>
-        <div className="space-y-4">
-          {requests.active.length > 0 ? requests.active.map((req: any) => (
-            <div key={req.id} className="p-4 border rounded-lg bg-yellow-50">
-                <div className="flex justify-between items-center">
-                <p className="font-semibold">{req.authorName || 'User'}</p>
-                {req.acceptedAt && req.acceptedAt.seconds ? (
-                  <Timer startTime={new Date(req.acceptedAt.seconds * 1000).toISOString()} />
-                ) : (
-                  <span className="text-gray-500">Not started</span>
+      {/* Search Modal */}
+      {searchModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="relative w-full max-w-xl mx-auto bg-white rounded-2xl shadow-2xl p-8 border border-blue-200 max-h-[90vh] overflow-y-auto animate-fadeIn">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              onClick={closeSearchModal}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-extrabold text-blue-700 mb-4 text-center tracking-tight">Manual AI Solution</h2>
+            <form onSubmit={handleSearch} className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">Describe your problem or question:</label>
+              <textarea
+                className="w-full border border-blue-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none min-h-[80px] mb-2"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="E.g. How do I refill oil in NHL 40 gearbox?"
+                required
+              />
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow mt-2 transition-colors duration-150"
+                disabled={searchLoading}
+              >
+                {searchLoading ? 'Searching...' : 'Get Solution'}
+              </button>
+            </form>
+            {searchError && <div className="text-red-600 font-semibold mb-2">{searchError}</div>}
+            {searchResult && (
+              <div className="mt-4">
+                <h3 className="font-bold text-lg mb-2 text-blue-700">AI Solution</h3>
+                <div className="bg-gray-50 border border-blue-100 rounded-lg p-4 mb-2 max-h-60 overflow-y-auto prose prose-blue">
+                  <ReactMarkdown>{searchResult.answer}</ReactMarkdown>
+                </div>
+                {searchResult.relevantSections && searchResult.relevantSections.length > 0 && (
+                  <div className="text-xs text-gray-600 max-h-32 overflow-y-auto mt-2">
+                    <b>Relevant Manual Sections:</b>
+                    <ul className="list-disc ml-5">
+                      {searchResult.relevantSections.map((section: any, idx: number) => (
+                        <li key={idx}>
+                          <b>Page {section.page}:</b> {section.text.slice(0, 120)}{section.text.length > 120 ? '...' : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
-              <p className="mt-2">{req.requestDetails}</p>
-              <button onClick={() => onClose(req.id)} className="mt-3 w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Mark as Complete</button>
-            </div>
-          )) : <p className="text-gray-500">No active services.</p>}
+            )}
+          </div>
         </div>
-      </div>
-      {/* Service History */}
-      <div className="bg-white shadow-lg rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Service History</h2>
-        <div className="space-y-4">
-            {requests.closed.length > 0 ? requests.closed.map((req: any) => (
-            <div key={req.id} className="p-4 border rounded-lg bg-blue-50">
-              <p className="font-semibold">{req.authorName || 'User'}</p>
-              <p className="text-gray-600 text-sm">
-                Closed: {
-                  req.closedAt
-                    ? req.closedAt.seconds
-                      ? new Date(req.closedAt.seconds * 1000).toLocaleString()
-                      : (typeof req.closedAt === 'string' || req.closedAt instanceof Date)
-                        ? new Date(req.closedAt).toLocaleString()
-                        : "N/A"
-                    : "N/A"
-                }
-              </p>
-              <p className="mt-2 text-gray-700">{req.requestDetails}</p>
-            </div>
-          )) : <p className="text-gray-500">No completed services.</p>}
-        </div>
-      </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 
 // --- Manager Components ---
@@ -367,6 +515,14 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
     </div>
   );
 };
+
+// Helper function for date formatting
+function formatDate(date: any) {
+  if (!date) return "N/A";
+  if (typeof date === 'string' || date instanceof Date) return new Date(date).toLocaleString();
+  if (date.seconds) return new Date(date.seconds * 1000).toLocaleString();
+  return "N/A";
+}
 
 export default function DashboardPage() {
   const router = useRouter();

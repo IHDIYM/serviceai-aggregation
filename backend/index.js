@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('./firebase');
 const fetch = require('node-fetch');
-
+const { registerManualRoutes, router: manualRouter } = require('./manual');
 const app = express();
 const PORT = 4000;
 
@@ -696,6 +696,10 @@ app.put('/requests/assign-ai-bulk', verifyToken, verifyManager, async (req, res)
     res.status(500).json({ error: 'Bulk AI assignment failed.' });
   }
 });
+
+// Register /manual endpoints with verifyToken
+registerManualRoutes(verifyToken);
+app.use('/manual', manualRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
