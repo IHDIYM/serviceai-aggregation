@@ -54,6 +54,7 @@
     --color-green-200: oklch(92.5% .084 155.995);
     --color-green-500: oklch(72.3% .219 149.579);
     --color-green-600: oklch(62.7% .194 149.214);
+    --color-green-700: oklch(52.7% .154 150.069);
     --color-green-800: oklch(44.8% .119 151.328);
     --color-blue-50: oklch(97% .014 254.604);
     --color-blue-100: oklch(93.2% .032 255.585);
@@ -66,6 +67,8 @@
     --color-indigo-500: oklch(58.5% .233 277.117);
     --color-indigo-600: oklch(51.1% .262 276.966);
     --color-purple-600: oklch(55.8% .288 302.321);
+    --color-purple-700: oklch(49.6% .265 301.924);
+    --color-purple-800: oklch(43.8% .218 303.724);
     --color-gray-50: oklch(98.5% .002 247.839);
     --color-gray-100: oklch(96.7% .003 264.542);
     --color-gray-200: oklch(92.8% .006 264.531);
@@ -597,6 +600,12 @@
     gap: calc(var(--spacing) * 12);
   }
 
+  :where(.space-y-2 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
+  }
+
   :where(.space-y-3 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
     margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
@@ -760,6 +769,14 @@
 
   .bg-orange-200 {
     background-color: var(--color-orange-200);
+  }
+
+  .bg-purple-600 {
+    background-color: var(--color-purple-600);
+  }
+
+  .bg-purple-700 {
+    background-color: var(--color-purple-700);
   }
 
   .bg-red-50 {
@@ -996,6 +1013,10 @@
     color: var(--color-green-600);
   }
 
+  .text-green-700 {
+    color: var(--color-green-700);
+  }
+
   .text-green-800 {
     color: var(--color-green-800);
   }
@@ -1119,6 +1140,18 @@
   @media (hover: hover) {
     .hover\:bg-green-600:hover {
       background-color: var(--color-green-600);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-purple-700:hover {
+      background-color: var(--color-purple-700);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-purple-800:hover {
+      background-color: var(--color-purple-800);
     }
   }
 
