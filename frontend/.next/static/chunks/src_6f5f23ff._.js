@@ -443,6 +443,7 @@ var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_
 __turbopack_context__.s({
     "default": (()=>DashboardPage)
 });
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/polyfills/process.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$auth$2f$dist$2f$esm$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/auth/dist/esm/index.esm.js [app-client] (ecmascript) <module evaluation>");
@@ -752,7 +753,7 @@ const TechnicianDashboard = ({ profile, requests, onAccept, onClose })=>/*#__PUR
     }, this);
 _c1 = TechnicianDashboard;
 // --- Manager Components ---
-const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
+const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssignAI, aiLoading, aiError, aiAssignedId, onBulkAssignAI, bulkLoading, bulkResult })=>{
     _s1();
     const [assignments, setAssignments] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({});
     const activeTechnicianIds = new Set(allRequests.filter((req)=>req.status === 'active').map((req)=>req.technicianId));
@@ -829,6 +830,54 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "mb-4 flex justify-end",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                    onClick: onBulkAssignAI,
+                    disabled: bulkLoading,
+                    className: "px-4 py-2 bg-purple-700 text-white font-semibold rounded-md shadow-sm hover:bg-purple-800 disabled:bg-gray-400",
+                    children: bulkLoading ? 'Bulk Assigning by AI...' : 'Bulk Assign All by AI'
+                }, void 0, false, {
+                    fileName: "[project]/src/app/dashboard/page.tsx",
+                    lineNumber: 126,
+                    columnNumber: 17
+                }, this)
+            }, void 0, false, {
+                fileName: "[project]/src/app/dashboard/page.tsx",
+                lineNumber: 125,
+                columnNumber: 13
+            }, this),
+            bulkResult && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "mb-4",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-green-700 font-semibold",
+                        children: [
+                            "Assigned: ",
+                            bulkResult.assignments.length
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/page.tsx",
+                        lineNumber: 136,
+                        columnNumber: 21
+                    }, this),
+                    bulkResult.errors.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-red-600 text-sm",
+                        children: [
+                            "Errors: ",
+                            bulkResult.errors.map((e)=>`Request ${e.requestId}: ${e.error}`).join(', ')
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/dashboard/page.tsx",
+                        lineNumber: 138,
+                        columnNumber: 25
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/dashboard/page.tsx",
+                lineNumber: 135,
+                columnNumber: 17
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "grid grid-cols-1 xl:grid-cols-5 gap-8",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -839,7 +888,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                 children: "All Service Requests"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 128,
+                                lineNumber: 146,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -856,7 +905,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Requester"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 133,
+                                                        lineNumber: 151,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -864,7 +913,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Details"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 134,
+                                                        lineNumber: 152,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -872,7 +921,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Technician"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 135,
+                                                        lineNumber: 153,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -880,7 +929,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Status"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 136,
+                                                        lineNumber: 154,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -888,7 +937,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Created At"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 137,
+                                                        lineNumber: 155,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -896,18 +945,18 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Actions"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 138,
+                                                        lineNumber: 156,
                                                         columnNumber: 37
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                lineNumber: 132,
+                                                lineNumber: 150,
                                                 columnNumber: 33
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 131,
+                                            lineNumber: 149,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -919,7 +968,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: req.authorName || 'N/A'
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 144,
+                                                            lineNumber: 162,
                                                             columnNumber: 41
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -927,7 +976,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: req.requestDetails
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 145,
+                                                            lineNumber: 163,
                                                             columnNumber: 41
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -935,7 +984,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: req.technicianName || 'Unassigned'
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 146,
+                                                            lineNumber: 164,
                                                             columnNumber: 41
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -943,7 +992,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: getStatusPill(req.status)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 147,
+                                                            lineNumber: 165,
                                                             columnNumber: 41
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -951,96 +1000,131 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: req.createdAt ? new Date(req.createdAt).toLocaleString() : "N/A"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 148,
+                                                            lineNumber: 166,
                                                             columnNumber: 41
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
                                                             className: "px-6 py-4 whitespace-nowrap text-sm font-medium",
                                                             children: req.status === 'pending' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                className: "flex items-center space-x-2",
+                                                                className: "flex flex-col space-y-2",
                                                                 children: [
-                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
-                                                                        value: assignments[req.id] || '',
-                                                                        onChange: (e)=>setAssignments({
-                                                                                ...assignments,
-                                                                                [req.id]: e.target.value
-                                                                            }),
-                                                                        className: "block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md",
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                        className: "flex items-center space-x-2",
                                                                         children: [
-                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                                                                value: "",
-                                                                                disabled: true,
-                                                                                children: technicians.filter((t)=>!activeTechnicianIds.has(t.id)).length === 0 ? "No available technicians" : "Select Technician"
-                                                                            }, void 0, false, {
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
+                                                                                value: assignments[req.id] || '',
+                                                                                onChange: (e)=>setAssignments({
+                                                                                        ...assignments,
+                                                                                        [req.id]: e.target.value
+                                                                                    }),
+                                                                                className: "block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md",
+                                                                                children: [
+                                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                                                                        value: "",
+                                                                                        disabled: true,
+                                                                                        children: technicians.filter((t)=>!activeTechnicianIds.has(t.id)).length === 0 ? "No available technicians" : "Select Technician"
+                                                                                    }, void 0, false, {
+                                                                                        fileName: "[project]/src/app/dashboard/page.tsx",
+                                                                                        lineNumber: 176,
+                                                                                        columnNumber: 61
+                                                                                    }, this),
+                                                                                    technicians.filter((t)=>!activeTechnicianIds.has(t.id)).map((tech)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
+                                                                                            value: tech.id,
+                                                                                            children: [
+                                                                                                tech.firstName,
+                                                                                                " ",
+                                                                                                tech.lastName
+                                                                                            ]
+                                                                                        }, tech.id, true, {
+                                                                                            fileName: "[project]/src/app/dashboard/page.tsx",
+                                                                                            lineNumber: 182,
+                                                                                            columnNumber: 65
+                                                                                        }, this))
+                                                                                ]
+                                                                            }, void 0, true, {
                                                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                                lineNumber: 157,
+                                                                                lineNumber: 171,
                                                                                 columnNumber: 57
                                                                             }, this),
-                                                                            technicians.filter((t)=>!activeTechnicianIds.has(t.id)).map((tech)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
-                                                                                    value: tech.id,
-                                                                                    children: [
-                                                                                        tech.firstName,
-                                                                                        " ",
-                                                                                        tech.lastName
-                                                                                    ]
-                                                                                }, tech.id, true, {
-                                                                                    fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                                    lineNumber: 163,
-                                                                                    columnNumber: 61
-                                                                                }, this))
+                                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                                                onClick: ()=>onAssign(req.id, assignments[req.id]),
+                                                                                disabled: !assignments[req.id],
+                                                                                className: "px-3 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-400",
+                                                                                children: "Assign"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/dashboard/page.tsx",
+                                                                                lineNumber: 185,
+                                                                                columnNumber: 57
+                                                                            }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                        lineNumber: 152,
+                                                                        lineNumber: 170,
                                                                         columnNumber: 53
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                                                        onClick: ()=>onAssign(req.id, assignments[req.id]),
-                                                                        disabled: !assignments[req.id],
-                                                                        className: "px-3 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-400",
-                                                                        children: "Assign"
+                                                                        onClick: ()=>onAssignAI(req.id),
+                                                                        disabled: aiLoading === req.id,
+                                                                        className: "px-3 py-2 bg-purple-600 text-white font-semibold rounded-md shadow-sm hover:bg-purple-700 disabled:bg-gray-400 mt-1",
+                                                                        children: aiLoading === req.id ? 'Assigning by AI...' : 'Assign Technician by AI'
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                        lineNumber: 166,
+                                                                        lineNumber: 193,
                                                                         columnNumber: 53
+                                                                    }, this),
+                                                                    aiError && aiLoading === req.id && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                        className: "text-red-500 text-xs",
+                                                                        children: aiError
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/page.tsx",
+                                                                        lineNumber: 201,
+                                                                        columnNumber: 57
+                                                                    }, this),
+                                                                    aiAssignedId === req.id && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                        className: "text-green-600 text-xs",
+                                                                        children: "Assigned by AI!"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/dashboard/page.tsx",
+                                                                        lineNumber: 204,
+                                                                        columnNumber: 57
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                lineNumber: 151,
+                                                                lineNumber: 169,
                                                                 columnNumber: 49
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 149,
+                                                            lineNumber: 167,
                                                             columnNumber: 41
                                                         }, this)
                                                     ]
                                                 }, req.id, true, {
                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                    lineNumber: 143,
+                                                    lineNumber: 161,
                                                     columnNumber: 37
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 141,
+                                            lineNumber: 159,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                    lineNumber: 130,
+                                    lineNumber: 148,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 129,
+                                lineNumber: 147,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 127,
+                        lineNumber: 145,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1051,7 +1135,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                 children: "Technicians"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 185,
+                                lineNumber: 218,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1068,7 +1152,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Name"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 190,
+                                                        lineNumber: 223,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1076,7 +1160,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Title"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 191,
+                                                        lineNumber: 224,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1084,18 +1168,18 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                         children: "Status"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 192,
+                                                        lineNumber: 225,
                                                         columnNumber: 37
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                lineNumber: 189,
+                                                lineNumber: 222,
                                                 columnNumber: 33
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 188,
+                                            lineNumber: 221,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -1116,7 +1200,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                    lineNumber: 201,
+                                                                    lineNumber: 234,
                                                                     columnNumber: 49
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1124,13 +1208,13 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                                     children: tech.email
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                    lineNumber: 202,
+                                                                    lineNumber: 235,
                                                                     columnNumber: 49
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 200,
+                                                            lineNumber: 233,
                                                             columnNumber: 45
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1138,7 +1222,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                             children: tech.title
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 204,
+                                                            lineNumber: 237,
                                                             columnNumber: 45
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1148,54 +1232,54 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                                                                 children: "On a Job"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                lineNumber: 207,
+                                                                lineNumber: 240,
                                                                 columnNumber: 53
                                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 className: "px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full",
                                                                 children: "Available"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                                lineNumber: 209,
+                                                                lineNumber: 242,
                                                                 columnNumber: 53
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                                            lineNumber: 205,
+                                                            lineNumber: 238,
                                                             columnNumber: 45
                                                         }, this)
                                                     ]
                                                 }, tech.id, true, {
                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                    lineNumber: 199,
+                                                    lineNumber: 232,
                                                     columnNumber: 41
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 195,
+                                            lineNumber: 228,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                    lineNumber: 187,
+                                    lineNumber: 220,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 186,
+                                lineNumber: 219,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 184,
+                        lineNumber: 217,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 125,
+                lineNumber: 143,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1204,12 +1288,12 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign })=>{
                     user: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["auth"].currentUser
                 }, void 0, false, {
                     fileName: "[project]/src/app/dashboard/page.tsx",
-                    lineNumber: 223,
+                    lineNumber: 256,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 222,
+                lineNumber: 255,
                 columnNumber: 13
             }, this)
         ]
@@ -1258,7 +1342,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 253,
+                                lineNumber: 286,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1267,13 +1351,13 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                 children: "Add Service"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 254,
+                                lineNumber: 287,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 252,
+                        lineNumber: 285,
                         columnNumber: 9
                     }, this),
                     showForm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1291,7 +1375,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                     children: "×"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                    lineNumber: 264,
+                                    lineNumber: 297,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
@@ -1299,7 +1383,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                     children: "New Service Request"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                    lineNumber: 271,
+                                    lineNumber: 304,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -1316,7 +1400,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                             autoFocus: true
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 273,
+                                            lineNumber: 306,
                                             columnNumber: 17
                                         }, this),
                                         error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1324,7 +1408,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                             children: error
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 282,
+                                            lineNumber: 315,
                                             columnNumber: 27
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1340,7 +1424,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                                     children: "Cancel"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                    lineNumber: 284,
+                                                    lineNumber: 317,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1350,36 +1434,36 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                                     children: submitting ? "Submitting..." : "Submit"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                                    lineNumber: 291,
+                                                    lineNumber: 324,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/dashboard/page.tsx",
-                                            lineNumber: 283,
+                                            lineNumber: 316,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/dashboard/page.tsx",
-                                    lineNumber: 272,
+                                    lineNumber: 305,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/dashboard/page.tsx",
-                            lineNumber: 263,
+                            lineNumber: 296,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 262,
+                        lineNumber: 295,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 251,
+                lineNumber: 284,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1390,7 +1474,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                         children: "Your Service Requests"
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 305,
+                        lineNumber: 338,
                         columnNumber: 9
                     }, this),
                     userRequests.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1398,7 +1482,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                         children: "No requests yet."
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 307,
+                        lineNumber: 340,
                         columnNumber: 11
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
                         className: "divide-y divide-gray-200",
@@ -1415,7 +1499,7 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                                         children: req.requestDetails
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 314,
+                                                        lineNumber: 347,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1426,13 +1510,13 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                                        lineNumber: 315,
+                                                        lineNumber: 348,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                lineNumber: 313,
+                                                lineNumber: 346,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1440,13 +1524,13 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                                 children: req.status.charAt(0).toUpperCase() + req.status.slice(1)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                                lineNumber: 317,
+                                                lineNumber: 350,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                        lineNumber: 312,
+                                        lineNumber: 345,
                                         columnNumber: 17
                                     }, this),
                                     req.technicianName && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1457,30 +1541,30 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest })=>{
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/dashboard/page.tsx",
-                                        lineNumber: 327,
+                                        lineNumber: 360,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, req.id, true, {
                                 fileName: "[project]/src/app/dashboard/page.tsx",
-                                lineNumber: 311,
+                                lineNumber: 344,
                                 columnNumber: 15
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/dashboard/page.tsx",
-                        lineNumber: 309,
+                        lineNumber: 342,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 304,
+                lineNumber: 337,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/page.tsx",
-        lineNumber: 250,
+        lineNumber: 283,
         columnNumber: 5
     }, this);
 };
@@ -1502,9 +1586,16 @@ function DashboardPage() {
     });
     const [apiError, setApiError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [userRequests, setUserRequests] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [aiLoading, setAiLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [aiError, setAiError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [aiAssignedId, setAiAssignedId] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [bulkLoading, setBulkLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [bulkResult, setBulkResult] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const getAuthHeader = async ()=>{
         const user = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["auth"].currentUser;
-        if (!user) return {};
+        if (!user) return {
+            headers: {}
+        };
         const idToken = await user.getIdToken();
         return {
             headers: {
@@ -1645,6 +1736,43 @@ function DashboardPage() {
             }
         }
     };
+    const handleAssignAI = async (requestId)=>{
+        setAiLoading(requestId);
+        setAiError(null);
+        setAiAssignedId(null);
+        try {
+            const config = await getAuthHeader();
+            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].put(`${__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/requests/${requestId}/assign-ai`, {}, config);
+            setAiAssignedId(requestId);
+            // Optionally, refresh data here
+            await fetchManagerData();
+        } catch (err) {
+            setAiError(err?.response?.data?.error || 'Failed to assign by AI');
+        } finally{
+            setAiLoading(null);
+        }
+    };
+    const handleBulkAssignAI = async ()=>{
+        setBulkLoading(true);
+        setBulkResult(null);
+        try {
+            const config = await getAuthHeader();
+            const res = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].put(`${__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/requests/assign-ai-bulk`, {}, config);
+            setBulkResult(res.data);
+            await fetchManagerData();
+        } catch (err) {
+            setBulkResult({
+                assignments: [],
+                errors: [
+                    {
+                        error: err?.response?.data?.error || 'Bulk AI assignment failed.'
+                    }
+                ]
+            });
+        } finally{
+            setBulkLoading(false);
+        }
+    };
     if (loading) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex items-center justify-center h-screen",
@@ -1652,12 +1780,12 @@ function DashboardPage() {
                 children: "Loading Dashboard..."
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 483,
+                lineNumber: 561,
                 columnNumber: 71
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/page.tsx",
-            lineNumber: 483,
+            lineNumber: 561,
             columnNumber: 12
         }, this);
     }
@@ -1668,12 +1796,12 @@ function DashboardPage() {
                 children: "Could not load profile data."
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 487,
+                lineNumber: 565,
                 columnNumber: 71
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/app/dashboard/page.tsx",
-            lineNumber: 487,
+            lineNumber: 565,
             columnNumber: 12
         }, this);
     }
@@ -1685,17 +1813,24 @@ function DashboardPage() {
                 children: apiError
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 492,
+                lineNumber: 570,
                 columnNumber: 22
             }, this),
             profile.role === 'manager' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ManagerDashboard, {
                 profile: profile,
                 allRequests: managerData.allRequests,
                 technicians: managerData.technicians,
-                onAssign: handleAssignRequest
+                onAssign: handleAssignRequest,
+                onAssignAI: handleAssignAI,
+                aiLoading: aiLoading,
+                aiError: aiError,
+                aiAssignedId: aiAssignedId,
+                onBulkAssignAI: handleBulkAssignAI,
+                bulkLoading: bulkLoading,
+                bulkResult: bulkResult
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 494,
+                lineNumber: 572,
                 columnNumber: 13
             }, this),
             profile.role === 'technician' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TechnicianDashboard, {
@@ -1705,7 +1840,7 @@ function DashboardPage() {
                 onClose: handleCloseRequest
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 497,
+                lineNumber: 587,
                 columnNumber: 13
             }, this),
             profile.role === 'user' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(UserDashboard, {
@@ -1714,7 +1849,7 @@ function DashboardPage() {
                 onSubmitRequest: handleSubmitUserRequest
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 500,
+                lineNumber: 590,
                 columnNumber: 13
             }, this),
             ![
@@ -1726,17 +1861,17 @@ function DashboardPage() {
                 children: "Unknown user role. Please contact support."
             }, void 0, false, {
                 fileName: "[project]/src/app/dashboard/page.tsx",
-                lineNumber: 503,
+                lineNumber: 593,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/dashboard/page.tsx",
-        lineNumber: 491,
+        lineNumber: 569,
         columnNumber: 5
     }, this);
 }
-_s3(DashboardPage, "r7b3adhfnJFHPmnGX3/cg1CZwi0=", false, function() {
+_s3(DashboardPage, "ejdJaUgik5IvBJA6yIGRdSMtuRA=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"]
     ];

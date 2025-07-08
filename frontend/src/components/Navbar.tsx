@@ -12,6 +12,11 @@ const Navbar = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!auth) {
+      console.warn('Firebase auth is not initialized');
+      return;
+    }
+    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -33,6 +38,10 @@ const Navbar = () => {
   }, []);
 
   const handleSignOut = async () => {
+    if (!auth) {
+      console.warn('Firebase auth is not initialized');
+      return;
+    }
     await auth.signOut();
     setDropdownOpen(false);
     router.push('/login');
