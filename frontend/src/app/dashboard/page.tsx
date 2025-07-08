@@ -97,7 +97,7 @@ const TechnicianDashboard = ({ profile, requests, onAccept, onClose }: any) => (
 
 
 // --- Manager Components ---
-const ManagerDashboard = ({ profile, allRequests, technicians, onAssign }: any) => {
+const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssignAI, aiLoading, aiError, aiAssignedId, onBulkAssignAI, bulkLoading, bulkResult }: any) => {
     const [assignments, setAssignments] = useState<{ [key: string]: string }>({});
 
     const activeTechnicianIds = new Set(
@@ -121,6 +121,24 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign }: any) 
                 <h1 className="text-4xl font-bold">Manager Dashboard</h1>
                 <p className="text-lg text-gray-600">Welcome, {profile.firstName}!</p>
             </div>
+
+            <div className="mb-4 flex justify-end">
+                <button
+                    onClick={onBulkAssignAI}
+                    disabled={bulkLoading}
+                    className="px-4 py-2 bg-purple-700 text-white font-semibold rounded-md shadow-sm hover:bg-purple-800 disabled:bg-gray-400"
+                >
+                    {bulkLoading ? 'Bulk Assigning by AI...' : 'Bulk Assign All by AI'}
+                </button>
+            </div>
+            {bulkResult && (
+                <div className="mb-4">
+                    <div className="text-green-700 font-semibold">Assigned: {bulkResult.assignments.length}</div>
+                    {bulkResult.errors.length > 0 && (
+                        <div className="text-red-600 text-sm">Errors: {bulkResult.errors.map((e: any) => `Request ${e.requestId}: ${e.error}`).join(', ')}</div>
+                    )}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
                 {/* Service Requests Overview */}
@@ -148,28 +166,43 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign }: any) 
                                         <td className="px-6 py-4 whitespace-nowrap">{req.createdAt ? new Date(req.createdAt).toLocaleString() : "N/A"}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             {req.status === 'pending' && (
-                                                <div className="flex items-center space-x-2">
-                                                    <select
-                                                        value={assignments[req.id] || ''}
-                                                        onChange={(e) => setAssignments({ ...assignments, [req.id]: e.target.value })}
-                                                        className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                                    >
-                                                        <option value="" disabled>
-                                                            {technicians.filter((t: any) => !activeTechnicianIds.has(t.id)).length === 0
-                                                                ? "No available technicians"
-                                                                : "Select Technician"}
-                                                        </option>
-                                                        {technicians.filter((t: any) => !activeTechnicianIds.has(t.id)).map((tech: any) => (
-                                                            <option key={tech.id} value={tech.id}>{tech.firstName} {tech.lastName}</option>
-                                                        ))}
-                                                    </select>
+                                                <div className="flex flex-col space-y-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <select
+                                                            value={assignments[req.id] || ''}
+                                                            onChange={(e) => setAssignments({ ...assignments, [req.id]: e.target.value })}
+                                                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                                        >
+                                                            <option value="" disabled>
+                                                                {technicians.filter((t: any) => !activeTechnicianIds.has(t.id)).length === 0
+                                                                    ? "No available technicians"
+                                                                    : "Select Technician"}
+                                                            </option>
+                                                            {technicians.filter((t: any) => !activeTechnicianIds.has(t.id)).map((tech: any) => (
+                                                                <option key={tech.id} value={tech.id}>{tech.firstName} {tech.lastName}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            onClick={() => onAssign(req.id, assignments[req.id])}
+                                                            disabled={!assignments[req.id]}
+                                                            className="px-3 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-400"
+                                                        >
+                                                            Assign
+                                                        </button>
+                                                    </div>
                                                     <button
-                                                        onClick={() => onAssign(req.id, assignments[req.id])}
-                                                        disabled={!assignments[req.id]}
-                                                        className="px-3 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:bg-gray-400"
+                                                        onClick={() => onAssignAI(req.id)}
+                                                        disabled={aiLoading === req.id}
+                                                        className="px-3 py-2 bg-purple-600 text-white font-semibold rounded-md shadow-sm hover:bg-purple-700 disabled:bg-gray-400 mt-1"
                                                     >
-                                                        Assign
+                                                        {aiLoading === req.id ? 'Assigning by AI...' : 'Assign Technician by AI'}
                                                     </button>
+                                                    {aiError && aiLoading === req.id && (
+                                                        <span className="text-red-500 text-xs">{aiError}</span>
+                                                    )}
+                                                    {aiAssignedId === req.id && (
+                                                        <span className="text-green-600 text-xs">Assigned by AI!</span>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>
@@ -343,10 +376,15 @@ export default function DashboardPage() {
   const [managerData, setManagerData] = useState({ allRequests: [], technicians: [] });
   const [apiError, setApiError] = useState<string | null>(null);
   const [userRequests, setUserRequests] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiAssignedId, setAiAssignedId] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState<any>(null);
 
   const getAuthHeader = async () => {
     const user = auth.currentUser;
-    if (!user) return {};
+    if (!user) return { headers: {} };
     const idToken = await user.getIdToken();
     return { headers: { Authorization: `Bearer ${idToken}` } };
   };
@@ -479,6 +517,46 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAssignAI = async (requestId: string) => {
+    setAiLoading(requestId);
+    setAiError(null);
+    setAiAssignedId(null);
+    try {
+      const config = await getAuthHeader();
+      const res = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/requests/${requestId}/assign-ai`,
+        {},
+        config
+      );
+      setAiAssignedId(requestId);
+      // Optionally, refresh data here
+      await fetchManagerData();
+    } catch (err: any) {
+      setAiError(err?.response?.data?.error || 'Failed to assign by AI');
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleBulkAssignAI = async () => {
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const config = await getAuthHeader();
+      const res = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/requests/assign-ai-bulk`,
+        {},
+        config
+      );
+      setBulkResult(res.data);
+      await fetchManagerData();
+    } catch (err: any) {
+      setBulkResult({ assignments: [], errors: [{ error: err?.response?.data?.error || 'Bulk AI assignment failed.' }] });
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen"><p>Loading Dashboard...</p></div>;
   }
@@ -491,7 +569,19 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         {apiError && <p className="text-center text-red-500 mb-4">{apiError}</p>}
         {profile.role === 'manager' && (
-            <ManagerDashboard profile={profile} allRequests={managerData.allRequests} technicians={managerData.technicians} onAssign={handleAssignRequest} />
+            <ManagerDashboard
+                profile={profile}
+                allRequests={managerData.allRequests}
+                technicians={managerData.technicians}
+                onAssign={handleAssignRequest}
+                onAssignAI={handleAssignAI}
+                aiLoading={aiLoading}
+                aiError={aiError}
+                aiAssignedId={aiAssignedId}
+                onBulkAssignAI={handleBulkAssignAI}
+                bulkLoading={bulkLoading}
+                bulkResult={bulkResult}
+            />
         )}
         {profile.role === 'technician' && (
             <TechnicianDashboard profile={profile} requests={techRequests} onAccept={handleAcceptRequest} onClose={handleCloseRequest} />

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('./firebase');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = 4000;
@@ -490,6 +491,209 @@ app.get('/requests/mine', verifyToken, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch your requests.' });
+  }
+});
+
+// Gemini Flash 2.0 API integration
+const GEMINI_API_KEY = "AIzaSyCfGebLoSxI50ugKpe9OQ8LVlQEWRLTbws";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + GEMINI_API_KEY;
+
+// Assign technician by AI (Gemini)
+app.put('/requests/:id/assign-ai', verifyToken, verifyManager, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Fetch the request
+    const requestRef = admin.firestore().collection('requests').doc(id);
+    const requestDoc = await requestRef.get();
+    if (!requestDoc.exists) {
+      console.error(`[AI ASSIGN] Request not found: ${id}`);
+      return res.status(404).json({ error: 'Request not found.' });
+    }
+    const requestData = requestDoc.data();
+    if (requestData.status !== 'pending') {
+      console.error(`[AI ASSIGN] Request not pending: ${id}`);
+      return res.status(400).json({ error: 'Request must be pending to assign.' });
+    }
+
+    // Fetch all available technicians (not currently active)
+    const techSnapshot = await admin.firestore().collection('users').where('role', '==', 'technician').get();
+    const allTechnicians = techSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Exclude busy technicians (assigned to active requests)
+    const activeSnapshot = await admin.firestore().collection('requests').where('status', '==', 'active').get();
+    const busyTechIds = new Set(activeSnapshot.docs.map(doc => doc.data().technicianId));
+    const availableTechnicians = allTechnicians.filter(tech => !busyTechIds.has(tech.id));
+    if (availableTechnicians.length === 0) {
+      console.error(`[AI ASSIGN] No available technicians for request: ${id}`);
+      return res.status(400).json({ error: 'No available technicians.' });
+    }
+
+    // Prepare prompt for Gemini
+    const prompt = `Given the following service request and a list of technicians, select the best technician for the job based on their skills and specialties.\n\nService Request:\n${requestData.requestDetails}\n\nAvailable Technicians (JSON array):\n${JSON.stringify(availableTechnicians, null, 2)}\n\nRespond ONLY with the id of the best technician from the list.`;
+
+    // Call Gemini Flash 2.0
+    let geminiRes, geminiData;
+    try {
+      geminiRes = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      geminiData = await geminiRes.json();
+      console.log(`[AI ASSIGN] Gemini API response for request ${id}:`, JSON.stringify(geminiData));
+    } catch (err) {
+      console.error(`[AI ASSIGN] Gemini API call failed for request ${id}:`, err);
+      return res.status(500).json({ error: 'Gemini API call failed.' });
+    }
+    if (!geminiData || !geminiData.candidates || !geminiData.candidates[0] || !geminiData.candidates[0].content || !geminiData.candidates[0].content.parts) {
+      console.error(`[AI ASSIGN] Gemini API invalid response for request ${id}:`, JSON.stringify(geminiData));
+      return res.status(500).json({ error: 'Gemini API did not return a valid response.' });
+    }
+    // Extract technician id from Gemini response
+    const aiResponse = geminiData.candidates[0].content.parts[0].text.trim();
+    const selectedTechId = aiResponse.replace(/[^a-zA-Z0-9]/g, ''); // sanitize
+    const selectedTech = availableTechnicians.find(t => t.id === selectedTechId);
+    if (!selectedTech) {
+      console.error(`[AI ASSIGN] AI did not select a valid technician for request ${id}. AI response:`, aiResponse, 'Available IDs:', availableTechnicians.map(t => t.id));
+      return res.status(500).json({ error: 'AI did not select a valid technician.' });
+    }
+
+    // Assign the technician
+    try {
+      await requestRef.update({
+        status: 'active',
+        technicianId: selectedTech.id,
+        technicianName: `${selectedTech.firstName} ${selectedTech.lastName}`,
+        acceptedAt: new Date(),
+      });
+    } catch (err) {
+      console.error(`[AI ASSIGN] Firestore update failed for request ${id}:`, err);
+      return res.status(500).json({ error: 'Failed to update request in Firestore.' });
+    }
+
+    res.json({ message: 'Technician assigned by AI.', technician: selectedTech });
+  } catch (error) {
+    console.error(`[AI ASSIGN] Unexpected error for request ${id}:`, error);
+    res.status(500).json({ error: 'Failed to assign technician by AI.' });
+  }
+});
+
+// Bulk assign all pending requests by AI (Gemini)
+app.put('/requests/assign-ai-bulk', verifyToken, verifyManager, async (req, res) => {
+  try {
+    // Fetch all pending requests
+    const pendingSnapshot = await admin.firestore().collection('requests').where('status', '==', 'pending').get();
+    const pendingRequests = pendingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (pendingRequests.length === 0) {
+      return res.status(400).json({ error: 'No pending requests.' });
+    }
+
+    // Fetch all technicians
+    const techSnapshot = await admin.firestore().collection('users').where('role', '==', 'technician').get();
+    const allTechnicians = techSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Fetch all today's assignments (active or closed)
+    const now = new Date();
+    const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    const assignmentsSnapshot = await admin.firestore().collection('requests')
+      .where('createdAt', '>=', startOfDay.toISOString())
+      .get();
+    // Count assignments per technician
+    const assignmentsCount = {};
+    assignmentsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.technicianId) {
+        assignmentsCount[data.technicianId] = (assignmentsCount[data.technicianId] || 0) + 1;
+      }
+    });
+
+    // Fetch all active requests to determine busy technicians
+    const activeSnapshot = await admin.firestore().collection('requests').where('status', '==', 'active').get();
+    const busyTechIds = new Set(activeSnapshot.docs.map(doc => doc.data().technicianId));
+
+    const assignments = [];
+    const errors = [];
+
+    for (const req of pendingRequests) {
+      // Step 1: Try available technicians (<10 assignments today)
+      const availableTechnicians = allTechnicians.filter(tech =>
+        !busyTechIds.has(tech.id) && (assignmentsCount[tech.id] || 0) < 10
+      );
+      let selectedTech = null;
+      let selectedTechId = null;
+      let usedFallback = false;
+      if (availableTechnicians.length > 0) {
+        const idList = availableTechnicians.map(t => t.id).join(', ');
+        const prompt = `Given the following service request and a list of technicians, select the best technician for the job based on their skills and specialties.\n\nService Request:\n${req.requestDetails}\n\nAvailable Technicians (JSON array):\n${JSON.stringify(availableTechnicians, null, 2)}\n\nRespond ONLY with the id of the best technician from the list. If no technician is a perfect fit, select the closest match and respond ONLY with their id. The id must be one of: [${idList}]`;
+        try {
+          const geminiRes = await fetch(GEMINI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+          const geminiData = await geminiRes.json();
+          if (geminiData && geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content && geminiData.candidates[0].content.parts) {
+            const aiResponse = geminiData.candidates[0].content.parts[0].text.trim();
+            selectedTechId = aiResponse.replace(/[^a-zA-Z0-9]/g, '');
+            selectedTech = availableTechnicians.find(t => t.id === selectedTechId);
+          }
+        } catch (err) {
+          // ignore, will try all eligible next
+        }
+      }
+      // Step 2: If not found, try all eligible (<10 assignments today)
+      if (!selectedTech) {
+        const eligibleTechnicians = allTechnicians.filter(tech => (assignmentsCount[tech.id] || 0) < 10);
+        if (eligibleTechnicians.length > 0) {
+          const idList = eligibleTechnicians.map(t => t.id).join(', ');
+          const prompt = `Given the following service request and a list of technicians, select the best technician for the job based on their skills and specialties.\n\nService Request:\n${req.requestDetails}\n\nEligible Technicians (JSON array):\n${JSON.stringify(eligibleTechnicians, null, 2)}\n\nRespond ONLY with the id of the best technician from the list. If no technician is a perfect fit, select the closest match and respond ONLY with their id. The id must be one of: [${idList}]`;
+          try {
+            const geminiRes = await fetch(GEMINI_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const geminiData = await geminiRes.json();
+            if (geminiData && geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content && geminiData.candidates[0].content.parts) {
+              const aiResponse = geminiData.candidates[0].content.parts[0].text.trim();
+              selectedTechId = aiResponse.replace(/[^a-zA-Z0-9]/g, '');
+              selectedTech = eligibleTechnicians.find(t => t.id === selectedTechId);
+            }
+          } catch (err) {
+            // ignore, will error below if not found
+          }
+        }
+      }
+      // Fallback: assign to technician with fewest assignments if possible
+      if (!selectedTech) {
+        const eligibleTechnicians = allTechnicians.filter(tech => (assignmentsCount[tech.id] || 0) < 10);
+        if (eligibleTechnicians.length > 0) {
+          eligibleTechnicians.sort((a, b) => (assignmentsCount[a.id] || 0) - (assignmentsCount[b.id] || 0));
+          selectedTech = eligibleTechnicians[0];
+          usedFallback = true;
+          console.warn(`[AI ASSIGN] Fallback used: Assigned request ${req.id} to technician ${selectedTech.id} (${selectedTech.firstName} ${selectedTech.lastName}) with fewest assignments.`);
+        }
+      }
+      if (!selectedTech) {
+        errors.push({ requestId: req.id, error: 'No eligible technician (limit reached or no match).' });
+        continue;
+      }
+      // Assign the technician
+      // Increment the count BEFORE updating Firestore to prevent over-assignment in the same batch
+      assignmentsCount[selectedTech.id] = (assignmentsCount[selectedTech.id] || 0) + 1;
+      await admin.firestore().collection('requests').doc(req.id).update({
+        status: 'active',
+        technicianId: selectedTech.id,
+        technicianName: `${selectedTech.firstName} ${selectedTech.lastName}`,
+        acceptedAt: new Date(),
+      });
+      assignments.push({ requestId: req.id, technicianId: selectedTech.id, technicianName: `${selectedTech.firstName} ${selectedTech.lastName}`, fallback: usedFallback });
+    }
+    res.json({ assignments, errors });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Bulk AI assignment failed.' });
   }
 });
 
