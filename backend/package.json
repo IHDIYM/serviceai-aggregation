@@ -16,6 +16,7 @@
     "firebase-admin": "^13.4.0",
     "gpt-3-encoder": "^1.1.4",
     "multer": "^2.0.1",
-    "pdfjs-dist": "^5.3.93"
+    "pdfjs-dist": "^5.3.93",
+    "youtube-transcript": "^1.2.1"
   }
 }

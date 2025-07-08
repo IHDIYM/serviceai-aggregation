@@ -21,6 +21,8 @@ const pdfjsOptions = {
 };
 const { encode } = require('gpt-3-encoder');
 require('dotenv').config();
+const fetch = require('node-fetch');
+const { getTranscript } = require('youtube-transcript');
 
 const router = express.Router();
 
@@ -92,6 +94,36 @@ const vectorStore = {
   }
 };
 
+const YOUTUBE_API_KEY = "AIzaSyB3cPGxJnK_T6lqmjm-wThZsyCIJteXMJ0";
+const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
+const YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos";
+
+// Helper to extract chapters from video description
+function extractChapters(description) {
+  // Matches lines like '00:00 Intro' or '0:00 Introduction'
+  const chapterRegex = /^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)$/gm;
+  const chapters = [];
+  let match;
+  while ((match = chapterRegex.exec(description)) !== null) {
+    chapters.push({
+      time: match[1],
+      title: match[2].trim()
+    });
+  }
+  return chapters;
+}
+
+// Helper to fetch transcript for a YouTube video
+async function fetchTranscript(videoId) {
+  try {
+    const transcript = await getTranscript(videoId);
+    // transcript is an array of {text, start, duration}
+    return transcript;
+  } catch (err) {
+    return null;
+  }
+}
+
 // PDF upload endpoint
 // Pass verifyToken middleware as argument when mounting
 function registerManualRoutes(verifyToken) {
@@ -157,7 +189,7 @@ function registerManualRoutes(verifyToken) {
         });
       }
       // Compose prompt for Gemini
-      const prompt = `Based on these sections from the manual (with page numbers):\n${searchResults.map(result => `[Page ${result.page}]: ${result.text}`).join('\n\n')}\n\nQuestion: ${query}\n\nPlease provide a comprehensive answer that:\n1. Directly addresses the question\n2. Includes specific details from the manual\n3. Lists any steps in order (if applicable)\n4. Mentions relevant warnings or prerequisites (if any)\n5. Cites the page numbers when referring to specific information\n\nFormat the response in Markdown. Use ** for bold, * for italics, and bullet points or numbered lists where appropriate. Always use Markdown-style bold for section headers and key terms. Do not use HTML.`;
+      const prompt = `Based on these sections from the manual (with page numbers):\n${searchResults.map(result => `[Page ${result.page}]: ${result.text}`).join('\n\n')}\n\nQuestion: ${query}\n\nPlease provide a comprehensive answer that:\n1. Directly addresses the question\n2. Includes specific details from the manual\n3. Lists any steps in order (if applicable)\n4. Mentions relevant warnings or prerequisites (if any)\n5. Cites the page numbers when referring to specific information\n\nFormat the response in Markdown. Use ** for bold, * for italics, and bullet points or numbered lists where appropriate. Always use Markdown-style bold for section headers and key terms. Do not use HTML.\n\nALWAYS include a YouTube search query for a video that could help solve this problem. Respond with the answer first, then on a new line, write: 'YouTube search query: <query>'. If you cannot think of a good query, use the question itself as the YouTube search query. DO NOT skip this line.`;
       const GEMINI_API_KEY = "AIzaSyCfGebLoSxI50ugKpe9OQ8LVlQEWRLTbws";
       const GEMINI_MODEL = "gemini-2.0-flash";
       const response = await fetch(
@@ -177,7 +209,103 @@ function registerManualRoutes(verifyToken) {
       if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
         throw new Error('Invalid or empty response from Gemini API');
       }
-      const answer = result.candidates[0].content.parts[0].text;
+      const answerBlock = result.candidates[0].content.parts[0].text.trim();
+      // Extract YouTube search query from the answer
+      let answer = answerBlock;
+      let youtubeQuery = null;
+      const ytMatch = answerBlock.match(/YouTube search query:\s*(.+)$/i);
+      if (ytMatch) {
+        youtubeQuery = ytMatch[1].trim();
+        answer = answerBlock.replace(/YouTube search query:.+$/i, '').trim();
+      }
+      // Fallback: if Gemini did not output a query, use the original question
+      if (!youtubeQuery) {
+        youtubeQuery = query;
+      }
+      let youtube = null;
+      if (youtubeQuery) {
+        // Search YouTube for the top 5 videos
+        const ytRes = await fetch(`${YOUTUBE_SEARCH_URL}?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(youtubeQuery)}&key=${YOUTUBE_API_KEY}`);
+        const ytData = await ytRes.json();
+        let selectedVideo = null;
+        let chapters = [];
+        let description = '';
+        if (ytData.items && ytData.items.length > 0) {
+          // Try to find a video with chapters
+          for (const video of ytData.items) {
+            const videoId = video.id.videoId;
+            const vidRes = await fetch(`${YOUTUBE_VIDEO_URL}?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`);
+            const vidData = await vidRes.json();
+            if (vidData.items && vidData.items.length > 0) {
+              description = vidData.items[0].snippet.description || '';
+              chapters = extractChapters(description);
+              if (chapters.length > 0) {
+                selectedVideo = { video, videoId, description, chapters };
+                console.log(`[YouTube] Selected video with chapters: ${video.snippet.title}`);
+                break;
+              }
+            }
+          }
+          // If no video with chapters, use the first video and try transcript
+          if (!selectedVideo) {
+            const video = ytData.items[0];
+            const videoId = video.id.videoId;
+            const vidRes = await fetch(`${YOUTUBE_VIDEO_URL}?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`);
+            const vidData = await vidRes.json();
+            description = vidData.items && vidData.items.length > 0 ? vidData.items[0].snippet.description || '' : '';
+            chapters = extractChapters(description);
+            selectedVideo = { video, videoId, description, chapters };
+            if (chapters.length === 0) {
+              // Try transcript-based timeline
+              const transcript = await fetchTranscript(videoId);
+              if (transcript && transcript.length > 0) {
+                const transcriptText = transcript.map(t => `[${new Date(t.start * 1000).toISOString().substr(11, 8)}] ${t.text}`).join('\n');
+                const timelinePrompt = `Given the following YouTube video transcript and the question: "${query}", generate a timeline of key moments (timestamp and title) that would help answer the question. Format as one per line: 00:00 Title, 01:23 Next Section, etc. Only include the most relevant moments.`;
+                const timelineGeminiPrompt = `${timelinePrompt}\n\nTranscript:\n${transcriptText}`;
+                const timelineRes = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      contents: [{ parts: [{ text: timelineGeminiPrompt }] }]
+                    })
+                  }
+                );
+                if (timelineRes.ok) {
+                  const timelineData = await timelineRes.json();
+                  const timelineText = timelineData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                  const timelineLines = timelineText.split('\n').map(l => l.trim()).filter(Boolean);
+                  chapters = timelineLines.map(line => {
+                    const match = line.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)$/);
+                    if (match) {
+                      return { time: match[1], title: match[2] };
+                    }
+                    return null;
+                  }).filter(Boolean);
+                  if (chapters.length > 0) {
+                    selectedVideo.chapters = chapters;
+                    console.log(`[YouTube] Timeline generated from transcript for video: ${video.snippet.title}`);
+                  } else {
+                    console.log(`[YouTube] No timeline found from transcript for video: ${video.snippet.title}`);
+                  }
+                }
+              } else {
+                console.log(`[YouTube] No transcript available for video: ${video.snippet.title}`);
+              }
+            }
+          }
+          if (selectedVideo) {
+            youtube = {
+              videoId: selectedVideo.videoId,
+              title: selectedVideo.video.snippet.title,
+              url: `https://www.youtube.com/watch?v=${selectedVideo.videoId}`,
+              thumbnail: selectedVideo.video.snippet.thumbnails?.high?.url || selectedVideo.video.snippet.thumbnails?.default?.url,
+              chapters: selectedVideo.chapters || []
+            };
+          }
+        }
+      }
       res.json({
         answer: answer.trim(),
         relevantSections: searchResults.map(result => ({
@@ -185,6 +313,7 @@ function registerManualRoutes(verifyToken) {
           page: result.page,
           confidence: result.score
         })),
+        youtube,
         metadata: {
           totalPages: vectorStore.metadata.pageCount,
           pagesSearched: [...new Set(searchResults.map(r => r.page))],

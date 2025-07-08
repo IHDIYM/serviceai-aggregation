@@ -222,6 +222,48 @@ const TechnicianDashboard = ({ profile, requests, onAccept, onClose }: any) => {
                 <div className="bg-gray-50 border border-blue-100 rounded-lg p-4 mb-2 max-h-60 overflow-y-auto prose prose-blue">
                   <ReactMarkdown>{searchResult.answer}</ReactMarkdown>
                 </div>
+                {/* YouTube Video Suggestion */}
+                {searchResult.youtube && (
+                  <div className="mt-4 bg-white border border-red-200 rounded-lg p-4 shadow-sm">
+                    <h4 className="font-bold text-red-600 mb-2 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-red-500 inline-block" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.107-2.12C19.077 3.5 12 3.5 12 3.5s-7.077 0-9.391.566A2.994 2.994 0 0 0 .502 6.186C0 8.5 0 12 0 12s0 3.5.502 5.814a2.994 2.994 0 0 0 2.107 2.12C4.923 20.5 12 20.5 12 20.5s7.077 0 9.391-.566a2.994 2.994 0 0 0 2.107-2.12C24 15.5 24 12 24 12s0-3.5-.502-5.814zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/></svg>
+                      Suggested YouTube Video
+                    </h4>
+                    <div className="flex gap-4 items-start">
+                      <a href={searchResult.youtube.url} target="_blank" rel="noopener noreferrer">
+                        <img src={searchResult.youtube.thumbnail} alt="YouTube thumbnail" className="w-32 h-20 rounded-lg border" />
+                      </a>
+                      <div className="flex-1">
+                        <a href={searchResult.youtube.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 hover:underline block mb-1">
+                          {searchResult.youtube.title}
+                        </a>
+                        {searchResult.youtube.chapters && searchResult.youtube.chapters.length > 0 ? (
+                          <div className="mt-2">
+                            <span className="font-semibold text-gray-700">Video Timeline:</span>
+                            <ul className="list-disc ml-5 mt-1 text-sm">
+                              {searchResult.youtube.chapters.map((ch: any, idx: number) => (
+                                <li key={idx}>
+                                  <a
+                                    href={`${searchResult.youtube.url}&t=${ch.time.replace(/:/g, 'm').replace('m', 's')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline font-mono mr-2"
+                                  >
+                                    {ch.time}
+                                  </a>
+                                  <span className="text-gray-700">{ch.title}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-sm text-gray-500 italic">No suggested timeline available for this video.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* End YouTube Video Suggestion */}
                 {searchResult.relevantSections && searchResult.relevantSections.length > 0 && (
                   <div className="text-xs text-gray-600 max-h-32 overflow-y-auto mt-2">
                     <b>Relevant Manual Sections:</b>
