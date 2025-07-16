@@ -113,7 +113,17 @@ function AuthForm({ formType, role }) {
                 children: [
                     formType === 'signup' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                         children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                htmlFor: "firstName",
+                                className: "font-medium",
+                                children: "First Name"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 95,
+                                columnNumber: 13
+                            }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                id: "firstName",
                                 type: "text",
                                 placeholder: "First Name",
                                 value: firstName,
@@ -122,10 +132,20 @@ function AuthForm({ formType, role }) {
                                 required: true
                             }, void 0, false, {
                                 fileName: "[project]/src/components/AuthForm.tsx",
-                                lineNumber: 95,
+                                lineNumber: 96,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                htmlFor: "lastName",
+                                className: "font-medium",
+                                children: "Last Name"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 97,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                id: "lastName",
                                 type: "text",
                                 placeholder: "Last Name",
                                 value: lastName,
@@ -134,12 +154,22 @@ function AuthForm({ formType, role }) {
                                 required: true
                             }, void 0, false, {
                                 fileName: "[project]/src/components/AuthForm.tsx",
-                                lineNumber: 96,
+                                lineNumber: 98,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                        htmlFor: "email",
+                        className: "font-medium",
+                        children: "Email"
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/AuthForm.tsx",
+                        lineNumber: 101,
+                        columnNumber: 9
+                    }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                        id: "email",
                         type: "email",
                         placeholder: "Email",
                         value: email,
@@ -148,10 +178,20 @@ function AuthForm({ formType, role }) {
                         required: true
                     }, void 0, false, {
                         fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 99,
+                        lineNumber: 102,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                        htmlFor: "password",
+                        className: "font-medium",
+                        children: "Password"
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/AuthForm.tsx",
+                        lineNumber: 103,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                        id: "password",
                         type: "password",
                         placeholder: "Password",
                         value: password,
@@ -160,71 +200,118 @@ function AuthForm({ formType, role }) {
                         required: true
                     }, void 0, false, {
                         fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 100,
+                        lineNumber: 104,
                         columnNumber: 9
                     }, this),
                     formType === 'signup' && role === 'user' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center gap-2",
+                        className: "flex flex-col gap-1",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                                type: "text",
-                                placeholder: "Living Location",
-                                value: location,
-                                onChange: (e)=>setLocation(e.target.value),
-                                className: "border p-2 rounded w-full",
-                                required: true
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                htmlFor: "location",
+                                className: "font-medium",
+                                children: "Living Location"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/AuthForm.tsx",
-                                lineNumber: 104,
+                                lineNumber: 108,
                                 columnNumber: 13
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                type: "button",
-                                onClick: handleGetCurrentLocation,
-                                className: "bg-gray-200 p-2 rounded text-sm whitespace-nowrap",
-                                children: "Use Current"
-                            }, void 0, false, {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex items-center gap-2",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                        id: "location",
+                                        type: "text",
+                                        placeholder: "Living Location",
+                                        value: location,
+                                        onChange: (e)=>setLocation(e.target.value),
+                                        className: "border p-2 rounded w-full",
+                                        required: true
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/AuthForm.tsx",
+                                        lineNumber: 110,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                        type: "button",
+                                        onClick: handleGetCurrentLocation,
+                                        className: "bg-gray-200 p-2 rounded text-sm whitespace-nowrap",
+                                        children: "Use Current"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/AuthForm.tsx",
+                                        lineNumber: 111,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/AuthForm.tsx",
-                                lineNumber: 105,
+                                lineNumber: 109,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 103,
+                        lineNumber: 107,
                         columnNumber: 11
                     }, this),
-                    formType === 'signup' && role === 'manager' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                        type: "text",
-                        placeholder: "Department",
-                        value: department,
-                        onChange: (e)=>setDepartment(e.target.value),
-                        className: "border p-2 rounded",
-                        required: true
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 108,
-                        columnNumber: 57
-                    }, this),
-                    formType === 'signup' && role === 'technician' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                        type: "text",
-                        placeholder: "Special Tech",
-                        value: specialTech,
-                        onChange: (e)=>setSpecialTech(e.target.value),
-                        className: "border p-2 rounded",
-                        required: true
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 109,
-                        columnNumber: 60
-                    }, this),
+                    formType === 'signup' && role === 'manager' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                htmlFor: "department",
+                                className: "font-medium",
+                                children: "Department"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 117,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                id: "department",
+                                type: "text",
+                                placeholder: "Department",
+                                value: department,
+                                onChange: (e)=>setDepartment(e.target.value),
+                                className: "border p-2 rounded",
+                                required: true
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 118,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true),
+                    formType === 'signup' && role === 'technician' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
+                                htmlFor: "specialTech",
+                                className: "font-medium",
+                                children: "Special Tech"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 123,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                id: "specialTech",
+                                type: "text",
+                                placeholder: "Special Tech",
+                                value: specialTech,
+                                onChange: (e)=>setSpecialTech(e.target.value),
+                                className: "border p-2 rounded",
+                                required: true
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/AuthForm.tsx",
+                                lineNumber: 124,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                         type: "submit",
                         className: "bg-blue-600 text-white p-2 rounded hover:bg-blue-700",
                         children: formType === 'login' ? 'Login' : 'Sign Up'
                     }, void 0, false, {
                         fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 111,
+                        lineNumber: 127,
                         columnNumber: 9
                     }, this),
                     message && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -232,7 +319,7 @@ function AuthForm({ formType, role }) {
                         children: message
                     }, void 0, false, {
                         fileName: "[project]/src/components/AuthForm.tsx",
-                        lineNumber: 114,
+                        lineNumber: 130,
                         columnNumber: 21
                     }, this)
                 ]

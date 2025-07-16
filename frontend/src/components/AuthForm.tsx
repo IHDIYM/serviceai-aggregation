@@ -92,22 +92,38 @@ export default function AuthForm({ formType, role }: AuthFormProps) {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {formType === 'signup' && (
           <>
-            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="border p-2 rounded" required />
-            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="border p-2 rounded" required />
+            <label htmlFor="firstName" className="font-medium">First Name</label>
+            <input id="firstName" type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="border p-2 rounded" required />
+            <label htmlFor="lastName" className="font-medium">Last Name</label>
+            <input id="lastName" type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="border p-2 rounded" required />
           </>
         )}
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="border p-2 rounded" required />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="border p-2 rounded" required />
+        <label htmlFor="email" className="font-medium">Email</label>
+        <input id="email" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="border p-2 rounded" required />
+        <label htmlFor="password" className="font-medium">Password</label>
+        <input id="password" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="border p-2 rounded" required />
 
         {formType === 'signup' && role === 'user' && (
-          <div className="flex items-center gap-2">
-            <input type="text" placeholder="Living Location" value={location} onChange={e => setLocation(e.target.value)} className="border p-2 rounded w-full" required />
-            <button type="button" onClick={handleGetCurrentLocation} className="bg-gray-200 p-2 rounded text-sm whitespace-nowrap">Use Current</button>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="location" className="font-medium">Living Location</label>
+            <div className="flex items-center gap-2">
+              <input id="location" type="text" placeholder="Living Location" value={location} onChange={e => setLocation(e.target.value)} className="border p-2 rounded w-full" required />
+              <button type="button" onClick={handleGetCurrentLocation} className="bg-gray-200 p-2 rounded text-sm whitespace-nowrap">Use Current</button>
+            </div>
           </div>
         )}
-        {formType === 'signup' && role === 'manager' && <input type="text" placeholder="Department" value={department} onChange={e => setDepartment(e.target.value)} className="border p-2 rounded" required />}
-        {formType === 'signup' && role === 'technician' && <input type="text" placeholder="Special Tech" value={specialTech} onChange={e => setSpecialTech(e.target.value)} className="border p-2 rounded" required />}
-
+        {formType === 'signup' && role === 'manager' && (
+          <>
+            <label htmlFor="department" className="font-medium">Department</label>
+            <input id="department" type="text" placeholder="Department" value={department} onChange={e => setDepartment(e.target.value)} className="border p-2 rounded" required />
+          </>
+        )}
+        {formType === 'signup' && role === 'technician' && (
+          <>
+            <label htmlFor="specialTech" className="font-medium">Special Tech</label>
+            <input id="specialTech" type="text" placeholder="Special Tech" value={specialTech} onChange={e => setSpecialTech(e.target.value)} className="border p-2 rounded" required />
+          </>
+        )}
         <button type="submit" className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
           {formType === 'login' ? 'Login' : 'Sign Up'}
         </button>

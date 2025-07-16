@@ -4,11 +4,140 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import axios from "axios";
+import dayjs from 'dayjs';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Vehicle state for user
+  const [vehicleType, setVehicleType] = useState(profile?.vehicleType || '');
+  const [vehicleModel, setVehicleModel] = useState(profile?.vehicleModel || '');
+  const [purchaseDate, setPurchaseDate] = useState(profile?.purchaseDate ? profile.purchaseDate.slice(0,10) : '');
+  const [odometerKm, setOdometerKm] = useState(profile?.odometerKm || '');
+  const [vehicleMsg, setVehicleMsg] = useState('');
+
+  // Vehicles state for user
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [vehicleForm, setVehicleForm] = useState({
+    vehicleType: '',
+    vehicleModel: '',
+    purchaseDate: '',
+    odometerKm: ''
+  });
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+
+  // Update vehicle info handler
+  const handleVehicleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVehicleMsg('');
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+      const idToken = await user.getIdToken();
+      const res = await axios.put('http://localhost:4000/profile/vehicle', {
+        vehicleType, vehicleModel, purchaseDate, odometerKm
+      }, { headers: { Authorization: `Bearer ${idToken}` } });
+      setVehicleMsg('Vehicle info updated!');
+    } catch (err: any) {
+      setVehicleMsg(err.message || 'Failed to update vehicle info');
+    }
+  };
+
+  // Handle vehicle form input
+  const handleVehicleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setVehicleForm({ ...vehicleForm, [e.target.name]: e.target.value });
+  };
+
+  // Add or update vehicle
+  const handleVehicleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVehicleMsg('');
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+      const idToken = await user.getIdToken();
+      if (editingVehicleId) {
+        // Update vehicle
+        await axios.patch(`http://localhost:4000/profile/vehicle/${editingVehicleId}`, vehicleForm, {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+        setVehicleMsg('Vehicle updated!');
+      } else {
+        // Add new vehicle
+        await axios.post('http://localhost:4000/profile/vehicle', vehicleForm, {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+        setVehicleMsg('Vehicle added!');
+      }
+      // Refresh vehicles
+      const res = await axios.get('http://localhost:4000/profile/vehicles', {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+      setVehicles(res.data.vehicles || []);
+      setVehicleForm({ vehicleType: '', vehicleModel: '', purchaseDate: '', odometerKm: '' });
+      setEditingVehicleId(null);
+    } catch (err: any) {
+      setVehicleMsg(err.message || 'Failed to save vehicle');
+    }
+  };
+
+  // Edit vehicle
+  const handleEditVehicle = (vehicle: any) => {
+    setVehicleForm({
+      vehicleType: vehicle.vehicleType || '',
+      vehicleModel: vehicle.vehicleModel || '',
+      purchaseDate: vehicle.purchaseDate ? vehicle.purchaseDate.slice(0,10) : '',
+      odometerKm: vehicle.odometerKm || ''
+    });
+    setEditingVehicleId(vehicle.id);
+  };
+
+  // Delete vehicle
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    setVehicleMsg('');
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not authenticated');
+      const idToken = await user.getIdToken();
+      await axios.delete(`http://localhost:4000/profile/vehicle/${vehicleId}`, {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+      // Refresh vehicles
+      const res = await axios.get('http://localhost:4000/profile/vehicles', {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+      setVehicles(res.data.vehicles || []);
+      setVehicleMsg('Vehicle deleted.');
+      setEditingVehicleId(null);
+      setVehicleForm({ vehicleType: '', vehicleModel: '', purchaseDate: '', odometerKm: '' });
+    } catch (err: any) {
+      setVehicleMsg(err.message || 'Failed to delete vehicle');
+    }
+  };
+
+  // Fetch vehicles on profile load and after add/edit/delete
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setVehicleLoading(true);
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        const idToken = await user.getIdToken();
+        const res = await axios.get('http://localhost:4000/profile/vehicles', {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+        setVehicles(res.data.vehicles || []);
+      } catch (err) {
+        setVehicles([]);
+      } finally {
+        setVehicleLoading(false);
+      }
+    };
+    if (profile && profile.role === 'user') fetchVehicles();
+  }, [profile]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -101,8 +230,51 @@ export default function ProfilePage() {
                 </div>
             )}
              {profile.role === 'user' && (
-                <div className="text-center">
+                <div className="text-center mt-8">
                     <p className="text-lg font-semibold text-gray-700">Location: {profile.location}</p>
+                    <form onSubmit={handleVehicleSubmit} className="mt-6 flex flex-col gap-4 max-w-md mx-auto bg-gray-100 p-4 rounded-lg">
+                      <h2 className="text-xl font-bold mb-2">{editingVehicleId ? 'Edit Vehicle' : 'Add Vehicle'}</h2>
+                      <label htmlFor="vehicleType" className="font-medium">Vehicle Type</label>
+                      <select id="vehicleType" name="vehicleType" value={vehicleForm.vehicleType} onChange={handleVehicleInput} className="border p-2 rounded" required>
+                        <option value="">Select Type</option>
+                        <option value="diesel">Diesel</option>
+                        <option value="petrol">Petrol</option>
+                        <option value="electric">Electric</option>
+                      </select>
+                      <label htmlFor="vehicleModel" className="font-medium">Vehicle Model</label>
+                      <input id="vehicleModel" name="vehicleModel" type="text" placeholder="e.g. Honda City" value={vehicleForm.vehicleModel} onChange={handleVehicleInput} className="border p-2 rounded" required />
+                      <label htmlFor="purchaseDate" className="font-medium">Purchase Date</label>
+                      <input id="purchaseDate" name="purchaseDate" type="date" value={vehicleForm.purchaseDate} onChange={handleVehicleInput} className="border p-2 rounded" required />
+                      <label htmlFor="odometerKm" className="font-medium">Odometer Reading (km)</label>
+                      <input id="odometerKm" name="odometerKm" type="number" min="0" step="0.1" placeholder="Enter current odometer reading" value={vehicleForm.odometerKm} onChange={handleVehicleInput} className="border p-2 rounded" required />
+                      <button type="submit" className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">{editingVehicleId ? 'Update Vehicle' : 'Add Vehicle'}</button>
+                      {editingVehicleId && <button type="button" className="bg-gray-400 text-white p-2 rounded hover:bg-gray-500" onClick={() => { setEditingVehicleId(null); setVehicleForm({ vehicleType: '', vehicleModel: '', purchaseDate: '', odometerKm: '' }); }}>Cancel Edit</button>}
+                      {vehicleMsg && <p className="text-green-600 mt-2">{vehicleMsg}</p>}
+                    </form>
+                    {/* List of vehicles */}
+                    <div className="mt-8 max-w-2xl mx-auto">
+                      <h3 className="font-bold mb-4 text-lg">Your Vehicles</h3>
+                      {vehicleLoading ? (
+                        <p className="text-gray-500">Loading vehicles...</p>
+                      ) : vehicles.length === 0 ? (
+                        <p className="text-gray-500">No vehicles added yet.</p>
+                      ) : (
+                        vehicles.map(vehicle => (
+                          <div key={vehicle.id} className="bg-white p-4 rounded shadow mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="text-left">
+                              <p><b>Type:</b> {vehicle.vehicleType || '-'}</p>
+                              <p><b>Model:</b> {vehicle.vehicleModel || '-'}</p>
+                              <p><b>Purchase Date:</b> {vehicle.purchaseDate ? dayjs(vehicle.purchaseDate).format('YYYY-MM-DD') : '-'}</p>
+                              <p><b>Odometer (km):</b> {vehicle.odometerKm || '-'}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600" onClick={() => handleEditVehicle(vehicle)}>Edit</button>
+                              <button className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700" onClick={() => handleDeleteVehicle(vehicle.id)}>Delete</button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                 </div>
             )}
           </div>

@@ -7,6 +7,8 @@ import axios from "axios";
 import MetricsDashboard from '@/components/MetricsDashboard';
 import React, { useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import dayjs from 'dayjs';
+import { FaCar, FaBatteryFull, FaCogs, FaCalendarAlt, FaTachometerAlt, FaCheckCircle, FaExclamationCircle, FaTools, FaShieldAlt } from 'react-icons/fa';
 
 // --- Technician Components ---
 const Timer = ({ startTime }: { startTime: string }) => {
@@ -289,6 +291,23 @@ const TechnicianDashboard = ({ profile, requests, onAccept, onClose }: any) => {
 // --- Manager Components ---
 const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssignAI, aiLoading, aiError, aiAssignedId, onBulkAssignAI, bulkLoading, bulkResult }: any) => {
     const [assignments, setAssignments] = useState<{ [key: string]: string }>({});
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchType, setSearchType] = useState("id"); // 'id' or 'requester'
+    const [filteredRequests, setFilteredRequests] = useState(allRequests);
+
+    useEffect(() => {
+        if (!searchTerm) {
+            setFilteredRequests(allRequests);
+        } else {
+            setFilteredRequests(
+                allRequests.filter((req: any) =>
+                    searchType === 'id'
+                        ? req.id.toLowerCase().includes(searchTerm.toLowerCase())
+                        : (req.authorName || '').toLowerCase().includes(searchTerm.toLowerCase())
+                )
+            );
+        }
+    }, [searchTerm, searchType, allRequests]);
 
     const activeTechnicianIds = new Set(
         allRequests
@@ -312,14 +331,38 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssig
                 <p className="text-lg text-gray-600">Welcome, {profile.firstName}!</p>
             </div>
 
-            <div className="mb-4 flex justify-end">
-                <button
-                    onClick={onBulkAssignAI}
-                    disabled={bulkLoading}
-                    className="px-4 py-2 bg-purple-700 text-white font-semibold rounded-md shadow-sm hover:bg-purple-800 disabled:bg-gray-400"
+            {/* Search Bar */}
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+              <div className="flex gap-2 items-center">
+                <select
+                  value={searchType}
+                  onChange={e => setSearchType(e.target.value)}
+                  className="border rounded p-2 text-sm"
                 >
-                    {bulkLoading ? 'Bulk Assigning by AI...' : 'Bulk Assign All by AI'}
+                  <option value="id">Request ID</option>
+                  <option value="requester">Requester</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder={`Search by ${searchType === 'id' ? 'Request ID' : 'Requester'}`}
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="border rounded p-2 text-sm"
+                />
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm"
+                >
+                  Clear
                 </button>
+              </div>
+              <button
+                onClick={onBulkAssignAI}
+                disabled={bulkLoading}
+                className="px-4 py-2 bg-purple-700 text-white font-semibold rounded-md shadow-sm hover:bg-purple-800 disabled:bg-gray-400"
+              >
+                {bulkLoading ? 'Bulk Assigning by AI...' : 'Bulk Assign All by AI'}
+              </button>
             </div>
             {bulkResult && (
                 <div className="mb-4">
@@ -338,6 +381,7 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssig
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requester</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technician</th>
@@ -347,8 +391,9 @@ const ManagerDashboard = ({ profile, allRequests, technicians, onAssign, onAssig
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {allRequests.map((req: any) => (
+                                {filteredRequests.map((req: any) => (
                                     <tr key={req.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap font-mono text-blue-700">{req.id}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{req.authorName || 'N/A'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{req.requestDetails}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{req.technicianName || 'Unassigned'}</td>
@@ -454,20 +499,50 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setVehicleLoading(true);
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        const idToken = await user.getIdToken();
+        const res = await axios.get('http://localhost:4000/profile/vehicles', {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+        setVehicles(res.data.vehicles || []);
+      } catch (err) {
+        setVehicles([]);
+      } finally {
+        setVehicleLoading(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!selectedVehicleId) {
+      setError("Please select a vehicle for this request.");
+      return;
+    }
     if (!requestDetails.trim()) {
       setError("Please enter your service request details.");
       return;
     }
     setSubmitting(true);
-    await onSubmitRequest(requestDetails, setError);
+    await onSubmitRequest(requestDetails, setError, selectedVehicleId);
     setSubmitting(false);
     setRequestDetails("");
+    setSelectedVehicleId("");
     setShowForm(false);
   };
+
+  const statusColor = (status: string) => status === 'Active' ? 'text-green-600' : 'text-red-600';
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -481,6 +556,61 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
             Add Service
           </button>
         </div>
+        {/* Vehicle Info Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-extrabold mb-4 flex items-center gap-2 text-blue-800">
+            <FaCar className="inline-block text-blue-500" /> Your Vehicles
+          </h2>
+          {vehicleLoading ? (
+            <p className="text-gray-500">Loading vehicles...</p>
+          ) : vehicles.length === 0 ? (
+            <p className="text-gray-500">No vehicles added yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {vehicles.map(vehicle => (
+                <div key={vehicle.id} className="bg-white rounded-xl shadow-lg p-6 border border-blue-100 flex flex-col gap-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    <FaCar className="text-2xl text-blue-500" />
+                    <span className="text-lg font-bold capitalize">{vehicle.model || vehicle.vehicleModel || '-'} ({vehicle.vehicleType})</span>
+                  </div>
+                  <div className="flex flex-wrap gap-4 mb-2">
+                    <span className="flex items-center gap-1 text-gray-700"><FaCalendarAlt /> <b>Purchase:</b> {vehicle.purchaseDate ? dayjs(vehicle.purchaseDate).format('YYYY-MM-DD') : '-'}</span>
+                    <span className="flex items-center gap-1 text-gray-700"><FaTachometerAlt /> <b>Odometer:</b> {vehicle.odometerKm || '-'} km</span>
+                  </div>
+                  {/* Warranty Info */}
+                  {vehicle.warranty && (
+                    <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-3">
+                      <h4 className="font-semibold mb-2 text-blue-700 flex items-center gap-2"><FaShieldAlt /> Warranty Status</h4>
+                      <div className="flex flex-wrap gap-4 justify-center">
+                        {Object.entries(vehicle.warranty).map(([component, details]: any) => (
+                          <div key={component} className="bg-white rounded p-3 border border-gray-100 shadow-sm mb-2 min-w-[220px] max-w-xs flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {component.toLowerCase().includes('battery') && <FaBatteryFull className="text-yellow-500" />}
+                              {component.toLowerCase().includes('engine') && <FaCogs className="text-gray-700" />}
+                              {component.toLowerCase().includes('motor') && <FaTools className="text-purple-600" />}
+                              {component.toLowerCase().includes('transmission') && <FaCogs className="text-blue-600" />}
+                              {component.toLowerCase().includes('rust') && <FaExclamationCircle className="text-orange-600" />}
+                              <span className="font-medium text-gray-800 text-base">{component}</span>
+                            </div>
+                            <ul className="ml-2 text-sm space-y-1">
+                              {Object.entries(details).map(([k, v]) => (
+                                <li key={k} className={k === 'Status' ? statusColor(v as string) + ' font-semibold' : ''}>
+                                  <b>{k}:</b> {v}
+                                  {k === 'Status' && (v === 'Active' ? <FaCheckCircle className="inline ml-1 text-green-500" /> : <FaExclamationCircle className="inline ml-1 text-red-500" />)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* End Vehicle Info Section */}
         {showForm && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
             <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md relative">
@@ -493,6 +623,22 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
               </button>
               <h2 className="text-xl font-bold mb-2">New Service Request</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <label htmlFor="vehicle" className="font-medium">Select Vehicle</label>
+                <select
+                  id="vehicle"
+                  value={selectedVehicleId}
+                  onChange={e => setSelectedVehicleId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={submitting || vehicleLoading}
+                >
+                  <option value="">-- Select your vehicle --</option>
+                  {vehicles.map((v: any) => (
+                    <option key={v.id} value={v.id}>
+                      {v.vehicleModel || v.model} ({v.vehicleType})
+                    </option>
+                  ))}
+                </select>
                 <textarea
                   className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
@@ -524,8 +670,8 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
           </div>
         )}
       </div>
-      <div className="bg-white shadow-lg rounded-xl p-6">
-        <h2 className="text-xl font-bold mb-4">Your Service Requests</h2>
+      <div className="bg-white shadow-lg rounded-xl p-6 mt-8">
+        <h2 className="text-2xl font-extrabold mb-4 text-blue-800 flex items-center gap-2"><FaTools className="text-blue-500" /> Your Service Requests</h2>
         {userRequests.length === 0 ? (
           <p className="text-gray-500">No requests yet.</p>
         ) : (
@@ -534,8 +680,12 @@ const UserDashboard = ({ profile, userRequests, onSubmitRequest }: any) => {
               <li key={req.id} className="py-4">
                 <div className="flex justify-between items-center">
                   <div>
+                    <p className="font-semibold">Request ID: <span className="text-blue-700 font-mono">{req.id}</span></p>
                     <p className="font-semibold">{req.requestDetails}</p>
                     <p className="text-xs text-gray-500">Submitted: {req.createdAt ? new Date(req.createdAt).toLocaleString() : "N/A"}</p>
+                    {req.vehicleModel && (
+                      <p className="text-xs text-gray-600 mt-1">Vehicle: {req.vehicleModel} ({req.vehicleType})</p>
+                    )}
                   </div>
                   <span className={
                     req.status === 'pending' ? 'px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold' :
@@ -623,10 +773,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSubmitUserRequest = async (details: string, setError: (msg: string) => void) => {
+  const handleSubmitUserRequest = async (details: string, setError: (msg: string) => void, vehicleId: string) => {
     try {
       const config = await getAuthHeader();
-      await axios.post("http://localhost:4000/requests", { requestDetails: details }, config);
+      await axios.post("http://localhost:4000/requests", { requestDetails: details, vehicleId }, config);
       await fetchUserRequests();
     } catch (error: any) {
       setError(error?.response?.data?.error || "Failed to submit request.");

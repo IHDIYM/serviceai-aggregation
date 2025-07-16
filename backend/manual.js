@@ -4,14 +4,12 @@ const path = require('path');
 // Use dynamic import for ESM module
 let pdfjsLib;
 (async () => {
-  pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  // Configure PDF.js worker after import
-  const workerPath = path.resolve(
-    process.cwd(),
-    'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'
-  );
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    workerPath.startsWith('file://') ? workerPath : 'file://' + workerPath.replace(/\\/g, '/');
+  try {
+    pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
+  } catch (err) {
+    console.error('PDF.js import failed:', err.message);
+    pdfjsLib = null;
+  }
 })();
 const pdfjsOptions = {
   standardFontDataUrl: path.resolve(
@@ -130,6 +128,9 @@ function registerManualRoutes(verifyToken) {
   router.post('/upload', verifyToken, upload.single('pdf'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No PDF file uploaded' });
+    }
+    if (!pdfjsLib) {
+      return res.status(503).json({ error: 'PDF processing is currently unavailable.' });
     }
     try {
       vectorStore.clear();

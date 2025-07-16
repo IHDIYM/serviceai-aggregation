@@ -3,6 +3,7 @@ const cors = require('cors');
 const admin = require('./firebase');
 const fetch = require('node-fetch');
 const { registerManualRoutes, router: manualRouter } = require('./manual');
+const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = 4000;
 
@@ -110,6 +111,99 @@ app.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(401).json({ error: error.message });
+  }
+});
+
+// Add after login endpoint
+app.put('/profile/vehicle', verifyToken, async (req, res) => {
+  const uid = req.user.uid;
+  const { vehicleType, vehicleModel, purchaseDate, odometerKm } = req.body;
+  try {
+    const userRef = admin.firestore().collection('users').doc(uid);
+    await userRef.update({
+      vehicleType,
+      vehicleModel,
+      purchaseDate,
+      odometerKm
+    });
+    res.json({ message: 'Vehicle info updated.' });
+  } catch (error) {
+    console.error('Failed to update vehicle info:', error);
+    res.status(500).json({ error: 'Failed to update vehicle info.' });
+  }
+});
+
+// Get all vehicles for the user
+app.get('/profile/vehicles', verifyToken, async (req, res) => {
+  const uid = req.user.uid;
+  try {
+    const userDoc = await admin.firestore().collection('users').doc(uid).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'User not found.' });
+    const vehicles = (userDoc.data().vehicles || []).map(v => ({ ...v, warranty: calculateWarranty(v) }));
+    res.json({ vehicles });
+  } catch (error) {
+    console.error('Failed to get vehicles:', error);
+    res.status(500).json({ error: 'Failed to get vehicles.' });
+  }
+});
+
+// Add a new vehicle
+app.post('/profile/vehicle', verifyToken, async (req, res) => {
+  const uid = req.user.uid;
+  const { vehicleType, vehicleModel, purchaseDate, odometerKm } = req.body;
+  const newVehicle = {
+    id: uuidv4(),
+    vehicleType,
+    vehicleModel,
+    purchaseDate,
+    odometerKm
+  };
+  try {
+    const userRef = admin.firestore().collection('users').doc(uid);
+    await userRef.update({
+      vehicles: admin.firestore.FieldValue.arrayUnion(newVehicle)
+    });
+    res.json({ message: 'Vehicle added.', vehicle: newVehicle });
+  } catch (error) {
+    console.error('Failed to add vehicle:', error);
+    res.status(500).json({ error: 'Failed to add vehicle.' });
+  }
+});
+
+// Update a specific vehicle (e.g., odometer)
+app.patch('/profile/vehicle/:vehicleId', verifyToken, async (req, res) => {
+  const uid = req.user.uid;
+  const { vehicleId } = req.params;
+  const updateFields = req.body; // e.g., { odometerKm: 12345 }
+  try {
+    const userRef = admin.firestore().collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'User not found.' });
+    const vehicles = userDoc.data().vehicles || [];
+    const updatedVehicles = vehicles.map(v => v.id === vehicleId ? { ...v, ...updateFields } : v);
+    await userRef.update({ vehicles: updatedVehicles });
+    res.json({ message: 'Vehicle updated.', vehicles: updatedVehicles });
+  } catch (error) {
+    console.error('Failed to update vehicle:', error);
+    res.status(500).json({ error: 'Failed to update vehicle.' });
+  }
+});
+
+// Delete a vehicle
+app.delete('/profile/vehicle/:vehicleId', verifyToken, async (req, res) => {
+  const uid = req.user.uid;
+  const { vehicleId } = req.params;
+  try {
+    const userRef = admin.firestore().collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'User not found.' });
+    const vehicles = userDoc.data().vehicles || [];
+    const updatedVehicles = vehicles.filter(v => v.id !== vehicleId);
+    await userRef.update({ vehicles: updatedVehicles });
+    res.json({ message: 'Vehicle deleted.', vehicles: updatedVehicles });
+  } catch (error) {
+    console.error('Failed to delete vehicle:', error);
+    res.status(500).json({ error: 'Failed to delete vehicle.' });
   }
 });
 
@@ -296,23 +390,116 @@ function aggregateHourlyDistribution(metrics) {
   return hourlyCounts;
 }
 
+// Warranty calculation utility
+function calculateWarranty(vehicle) {
+  const { vehicleType, purchaseDate, odometerKm } = vehicle;
+  if (!vehicleType || !purchaseDate || odometerKm == null) return null;
+  const today = new Date();
+  const purchase = new Date(purchaseDate);
+  // Helper to add years
+  const addYears = (date, years) => new Date(date.getFullYear() + years, date.getMonth(), date.getDate());
+  // Helper to days between
+  const daysBetween = (d1, d2) => Math.floor((d1 - d2) / (1000 * 60 * 60 * 24));
+  let warranty = {};
+  // Base warranty
+  let baseWarrantyYears = 3, baseWarrantyKm = 100000;
+  let baseExpiry = addYears(purchase, baseWarrantyYears);
+  let remainingBaseDays = daysBetween(baseExpiry, today);
+  let remainingBaseKm = Math.max(0, baseWarrantyKm - odometerKm);
+  warranty["Standard Warranty"] = {
+    Status: (remainingBaseDays > 0 && remainingBaseKm > 0) ? "Active" : "Expired",
+    "Expiry Date": baseExpiry.toISOString().slice(0, 10),
+    "Remaining Days": remainingBaseDays,
+    "Remaining KM": remainingBaseKm
+  };
+  // Component-specific
+  if (vehicleType === "electric") {
+    // Battery
+    let batteryWarrantyYears = 8, batteryWarrantyKm = 160000;
+    let batteryExpiry = addYears(purchase, batteryWarrantyYears);
+    let remainingBatteryKm = Math.max(0, batteryWarrantyKm - odometerKm);
+    warranty["Battery Pack"] = {
+      Status: (batteryExpiry > today && remainingBatteryKm > 0) ? "Active" : "Expired",
+      "Expiry Date": batteryExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingBatteryKm
+    };
+    // Motor
+    let motorWarrantyYears = 5, motorWarrantyKm = 100000;
+    let motorExpiry = addYears(purchase, motorWarrantyYears);
+    let remainingMotorKm = Math.max(0, motorWarrantyKm - odometerKm);
+    warranty["Electric Motor"] = {
+      Status: (motorExpiry > today && remainingMotorKm > 0) ? "Active" : "Expired",
+      "Expiry Date": motorExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingMotorKm
+    };
+  } else if (vehicleType === "diesel") {
+    let engineWarrantyYears = 5, engineWarrantyKm = 150000;
+    let engineExpiry = addYears(purchase, engineWarrantyYears);
+    let remainingEngineKm = Math.max(0, engineWarrantyKm - odometerKm);
+    warranty["Engine Assembly"] = {
+      Status: (engineExpiry > today && remainingEngineKm > 0) ? "Active" : "Expired",
+      "Expiry Date": engineExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingEngineKm
+    };
+    warranty["Transmission"] = {
+      Status: (remainingBaseDays > 0 && remainingBaseKm > 0) ? "Active" : "Expired",
+      "Expiry Date": baseExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingBaseKm
+    };
+  } else { // petrol
+    let engineWarrantyYears = 3, engineWarrantyKm = 100000;
+    let engineExpiry = addYears(purchase, engineWarrantyYears);
+    let remainingEngineKm = Math.max(0, engineWarrantyKm - odometerKm);
+    warranty["Engine Assembly"] = {
+      Status: (engineExpiry > today && remainingEngineKm > 0) ? "Active" : "Expired",
+      "Expiry Date": engineExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingEngineKm
+    };
+    warranty["Transmission"] = {
+      Status: (remainingBaseDays > 0 && remainingBaseKm > 0) ? "Active" : "Expired",
+      "Expiry Date": baseExpiry.toISOString().slice(0, 10),
+      "Remaining KM": remainingBaseKm
+    };
+  }
+  // Rust Perforation
+  let rustExpiry = addYears(purchase, 6);
+  warranty["Rust Perforation"] = {
+    Status: (rustExpiry > today) ? "Active" : "Expired",
+    "Expiry Date": rustExpiry.toISOString().slice(0, 10)
+  };
+  return warranty;
+}
+
 // --- Service Request Endpoints ---
 
 // Create a new service request (for users)
 app.post('/requests', verifyToken, async (req, res) => {
-    const { requestDetails } = req.body;
+    const { requestDetails, vehicleId } = req.body;
     const authorId = req.user.uid;
     const authorName = req.user.name;
 
     if (!requestDetails) {
         return res.status(400).json({ error: 'Request details are required.' });
     }
+    if (!vehicleId) {
+        return res.status(400).json({ error: 'Vehicle ID is required.' });
+    }
 
     try {
+        // Lookup vehicle info
+        const userDoc = await admin.firestore().collection('users').doc(authorId).get();
+        const vehicles = userDoc.exists ? (userDoc.data().vehicles || []) : [];
+        const vehicle = vehicles.find(v => v.id === vehicleId);
+        if (!vehicle) {
+            return res.status(400).json({ error: 'Selected vehicle not found.' });
+        }
         const requestData = {
             authorId,
             authorName,
             requestDetails,
+            // vehicleId, // Do not store vehicleId
+            vehicleModel: vehicle.vehicleModel || vehicle.model || '',
+            vehicleType: vehicle.vehicleType || '',
             status: 'pending',
             createdAt: new Date(),
             technicianId: null,
