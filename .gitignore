@@ -92,3 +92,4 @@ Thumbs.db
 # Logs
 aggregation.log
 continuous_aggregation.log
+backend/Data/updated_tata_complaints_sequential.csv
