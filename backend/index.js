@@ -147,6 +147,20 @@ app.get('/profile/vehicles', verifyToken, async (req, res) => {
   }
 });
 
+// Endpoint for technicians to fetch a user's vehicles (with warranty info) by userId
+app.get('/profile/vehicles/:userId', verifyToken, async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'User not found.' });
+    const vehicles = (userDoc.data().vehicles || []).map(v => ({ ...v, warranty: calculateWarranty(v) }));
+    res.json({ vehicles });
+  } catch (error) {
+    console.error('Failed to get vehicles for user:', error);
+    res.status(500).json({ error: 'Failed to get vehicles for user.' });
+  }
+});
+
 // Add a new vehicle
 app.post('/profile/vehicle', verifyToken, async (req, res) => {
   const uid = req.user.uid;
@@ -472,11 +486,22 @@ function calculateWarranty(vehicle) {
 
 // --- Service Request Endpoints ---
 
-// Create a new service request (for users)
+// Create a new service request (for users or by technician for user)
 app.post('/requests', verifyToken, async (req, res) => {
-    const { requestDetails, vehicleId } = req.body;
-    const authorId = req.user.uid;
-    const authorName = req.user.name;
+    const { requestDetails, vehicleId, authorId: providedAuthorId } = req.body;
+    const currentUserId = req.user.uid;
+    const currentUserName = req.user.name;
+
+    // Fetch the user's profile from Firestore to get the role
+    const userProfileDoc = await admin.firestore().collection('users').doc(currentUserId).get();
+    const userProfile = userProfileDoc.exists ? userProfileDoc.data() : {};
+    const currentUserRole = userProfile.role;
+
+    // Debug logging
+    console.log('DEBUG: POST /requests');
+    console.log('currentUserId:', currentUserId);
+    console.log('currentUserRole:', currentUserRole);
+    console.log('providedAuthorId:', providedAuthorId);
 
     if (!requestDetails) {
         return res.status(400).json({ error: 'Request details are required.' });
@@ -485,29 +510,56 @@ app.post('/requests', verifyToken, async (req, res) => {
         return res.status(400).json({ error: 'Vehicle ID is required.' });
     }
 
-    try {
-        // Lookup vehicle info
-        const userDoc = await admin.firestore().collection('users').doc(authorId).get();
-        const vehicles = userDoc.exists ? (userDoc.data().vehicles || []) : [];
-        const vehicle = vehicles.find(v => v.id === vehicleId);
-        if (!vehicle) {
-            return res.status(400).json({ error: 'Selected vehicle not found.' });
+    let authorId = currentUserId;
+    let authorName = currentUserName;
+    let userDoc;
+    // If technician is submitting for a user
+    if (currentUserRole === 'technician' && providedAuthorId) {
+        if (providedAuthorId === 'technician') {
+            // Technician is submitting for themselves (walk-in, etc.)
+            authorId = 'technician';
+            authorName = currentUserName;
+            userDoc = null;
+        } else {
+            // Technician is submitting for a user
+            authorId = providedAuthorId;
+            // Fetch user info for name
+            userDoc = await admin.firestore().collection('users').doc(authorId).get();
+            if (!userDoc.exists) {
+                return res.status(400).json({ error: 'Selected user not found.' });
+            }
+            const userData = userDoc.data();
+            authorName = userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` : userData.email || 'User';
         }
-        const requestData = {
-            authorId,
-            authorName,
-            requestDetails,
-            // vehicleId, // Do not store vehicleId
-            vehicleModel: vehicle.vehicleModel || vehicle.model || '',
-            vehicleType: vehicle.vehicleType || '',
-            status: 'pending',
-            createdAt: new Date(),
-            technicianId: null,
-            technicianName: null,
-            acceptedAt: null,
-            closedAt: null,
-        };
+    } else {
+        // User submitting for themselves
+        userDoc = await admin.firestore().collection('users').doc(authorId).get();
+    }
+    console.log('authorId used for vehicle lookup:', authorId);
+    let vehicles = [];
+    if (userDoc) {
+        vehicles = userDoc.exists ? (userDoc.data().vehicles || []) : [];
+    }
+    console.log('DEBUG: Incoming vehicleId:', vehicleId, 'User vehicles:', vehicles.map(v => v.id));
+    const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+    if (!vehicle) {
+        return res.status(400).json({ error: 'Selected vehicle not found.' });
+    }
+    const requestData = {
+        authorId,
+        authorName,
+        requestDetails,
+        vehicleModel: vehicle.vehicleModel || vehicle.model || '',
+        vehicleType: vehicle.vehicleType || '',
+        status: 'pending',
+        createdAt: new Date(),
+        technicianId: null,
+        technicianName: null,
+        acceptedAt: null,
+        closedAt: null,
+    };
 
+    try {
         const docRef = await admin.firestore().collection('requests').add(requestData);
         res.status(201).json({ message: 'Request created successfully', requestId: docRef.id });
     } catch (error) {
@@ -614,8 +666,8 @@ app.put('/requests/:id/accept', verifyToken, async (req, res) => {
     await requestRef.update({
       status: 'active',
       technicianId,
-      technicianName,
-      acceptedAt: new Date(),
+      technicianName
+      // acceptedAt: new Date(), // Do NOT set acceptedAt here
     });
 
     res.json({ message: 'Request accepted successfully.' });
@@ -654,6 +706,34 @@ app.put('/requests/:id/close', verifyToken, async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'Failed to close request.' });
     }
+});
+
+// Add endpoint for technician to start a service request (set acceptedAt)
+app.put('/requests/:id/start', verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const technicianId = req.user.uid;
+  try {
+    const requestRef = admin.firestore().collection('requests').doc(id);
+    const doc = await requestRef.get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Request not found.' });
+    }
+    const data = doc.data();
+    if (data.technicianId !== technicianId) {
+      return res.status(403).json({ error: 'You are not assigned to this request.' });
+    }
+    if (data.status !== 'active') {
+      return res.status(400).json({ error: 'Only active requests can be started.' });
+    }
+    if (data.acceptedAt) {
+      return res.status(400).json({ error: 'Request already started.' });
+    }
+    await requestRef.update({ acceptedAt: new Date() });
+    res.json({ message: 'Request started.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to start request.' });
+  }
 });
 
 // Get all requests for the logged-in user
@@ -887,6 +967,29 @@ app.put('/requests/assign-ai-bulk', verifyToken, verifyManager, async (req, res)
 // Register /manual endpoints with verifyToken
 registerManualRoutes(verifyToken);
 app.use('/manual', manualRouter);
+
+// Endpoint to search users by name or email (for technician user search)
+app.get('/users/search', verifyToken, async (req, res) => {
+  const q = (req.query.q || '').toString().toLowerCase();
+  if (!q || q.length < 2) {
+    return res.status(400).json({ error: 'Query too short' });
+  }
+  try {
+    const snapshot = await admin.firestore().collection('users').where('role', '==', 'user').get();
+    const users = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(user =>
+        (user.firstName && user.firstName.toLowerCase().includes(q)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(q)) ||
+        (user.email && user.email.toLowerCase().includes(q))
+      )
+      .map(user => ({ id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email }));
+    res.json({ users });
+  } catch (error) {
+    console.error('Failed to search users:', error);
+    res.status(500).json({ error: 'Failed to search users.' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
