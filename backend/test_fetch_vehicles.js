@@ -9,7 +9,7 @@ const USER_ID = '5klpTZnjCwWixqtV6QXyTewFCDU2';
 async function fetchVehicles() {
   try {
     const res = await axios.get(
-      `http://localhost:4000/profile/vehicles/${USER_ID}`,
+      `http://13.60.214.254/profile/vehicles/${USER_ID}`,
       {
         headers: {
           Authorization: `Bearer ${ID_TOKEN}`,

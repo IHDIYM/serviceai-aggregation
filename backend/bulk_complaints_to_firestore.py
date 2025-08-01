@@ -27,7 +27,7 @@ TECHNICIAN_NAMES = [
 ]
 
 # Path to CSV
-CSV_PATH = os.path.join("Data", "updated_tata_complaints_sequential.csv")
+CSV_PATH = os.path.join("Data", "sampleloc_1000.csv")
 
 # Initialize Firebase Admin
 if not firebase_admin._apps:
